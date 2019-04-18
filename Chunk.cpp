@@ -12,17 +12,39 @@ Chunk::Chunk()
 
 }
 
-uint8_t Chunk::addConstant(Value value){
-    constants_->push_back(value);
-    return constants_->size() - 1;
+void Chunk::appendSimpleOp(OpCode opCode, int lineNumber)
+{
+    appendOp(opCode, lineNumber);
 }
 
-Code Chunk::code() const
+void Chunk::appendConstant(Value value, int lineNumber)
+{
+    appendOp(OP_CONSTANT, lineNumber);
+    constants_->push_back(value);
+    auto constantPos = constants_->size() -1;
+    appendOp(constantPos, lineNumber);
+}
+
+int Chunk::lineNumberOf(Code::size_type opCodePos) const
+{
+    return lineNumbers_.at(opCodePos);
+}
+
+void Chunk::appendOp(uint8_t opCode, int lineNumber)
+{
+    code_->push_back(opCode);
+
+    // TODO better encoding
+    auto opCodePos = code_->size() - 1;
+    lineNumbers_.push_back(lineNumber);
+}
+
+std::shared_ptr<Code> Chunk::code() const
 {
     return code_;
 }
 
-Values Chunk::constants() const
+std::shared_ptr<Values> Chunk::constants() const
 {
     return constants_;
 }

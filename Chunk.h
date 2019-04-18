@@ -15,25 +15,37 @@ enum OpCode : uint8_t {
     OP_CONSTANT
 };
 
-typedef std::shared_ptr<std::vector<uint8_t>> Code;
+typedef std::vector<uint8_t> Code;
+
 typedef double Value;
-typedef std::shared_ptr<std::vector<Value>> Values;
+typedef std::vector<Value> Values;
+
 
 class Chunk{
 
 public:
     Chunk();
 
-    uint8_t addConstant(Value value);
+    void appendSimpleOp(OpCode opCode, int lineNumber);
 
-    Code code() const;
+    void appendConstant(Value value, int lineNumber);
 
-    Values constants() const;
+    int lineNumberOf(Code::size_type opCodePos) const;
+
+    std::shared_ptr<Code> code() const;
+
+    std::shared_ptr<Values> constants() const;
 
 private:
 
-    Code code_;
-    Values constants_;
+    void appendOp(uint8_t opCode, int lineNumber);
+
+    void saveLineNumber(int lineNumber, std::vector<uint8_t>::size_type opCodePos);
+
+    // TODO better encode them
+    std::vector<int> lineNumbers_;
+    std::shared_ptr<Code> code_;
+    std::shared_ptr<Values> constants_;
 };
 
 #endif //VMTEST_CHUNK_H
