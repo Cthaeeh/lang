@@ -24,6 +24,10 @@ void dissassembleChunk(const Chunk &chunk, const std::string &name)
                 std::cout << "OP_CONSTANT " << chunk.constants()->at(constant) << std::endl;
                 break;
             }
+            case OP_NEGATE: {
+                std::cout << "OP_NEGATE" << std::endl;
+                break;
+            }
             default:
                 std::cout << "Unknown opcode " << chunk.code()->at(i) << std::endl;
         }

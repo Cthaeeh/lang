@@ -12,7 +12,8 @@
 
 enum OpCode : uint8_t {
     OP_RETURN,
-    OP_CONSTANT
+    OP_CONSTANT,
+    OP_NEGATE
 };
 
 typedef std::vector<uint8_t> Code;

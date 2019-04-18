@@ -3,4 +3,4 @@ project(VmTest)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(VmTest main.cpp Debug.cpp Debug.h Chunk.cpp Chunk.h)
+add_executable(VmTest main.cpp Debug.cpp Debug.h Chunk.cpp Chunk.h VirtualMachine.cpp VirtualMachine.h)
