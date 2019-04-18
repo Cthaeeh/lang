@@ -1,0 +1,3 @@
+[submodule "include/CppCmb"]
+	path = include/CppCmb
+	url = https://github.com/LPeter1997/CppCmb.git
