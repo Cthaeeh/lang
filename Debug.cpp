@@ -28,6 +28,22 @@ void dissassembleChunk(const Chunk &chunk, const std::string &name)
                 std::cout << "OP_NEGATE" << std::endl;
                 break;
             }
+            case OP_ADD: {
+                std::cout << "OP_ADD" << std::endl;
+                break;
+            }
+            case OP_SUBTRACT: {
+                std::cout << "OP_SUBSTRACT" << std::endl;
+                break;
+            }
+            case OP_DIVIDE: {
+                std::cout << "OP_DIVIDE" << std::endl;
+                break;
+            }
+            case OP_MULTIPLY: {
+                std::cout << "OP_MULTIPLY" << std::endl;
+                break;
+            }
             default:
                 std::cout << "Unknown opcode " << chunk.code()->at(i) << std::endl;
         }

@@ -9,7 +9,9 @@ int main() {
 
     Chunk testChunk;
     testChunk.appendConstant(1.2, 123);
-    testChunk.appendSimpleOp(OP_NEGATE,124);
+    testChunk.appendConstant(1.2, 123);
+    testChunk.appendSimpleOp(OP_ADD, 123);
+
     dissassembleChunk(testChunk,"test chunk");
 
     VirtualMachine vm;

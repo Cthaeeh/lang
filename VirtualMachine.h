@@ -29,6 +29,9 @@ private:
     std::vector<Value> stack_;
 
     uint8_t* ip_;
+
+    template<class Func>
+    void binaryOp(Func func);
 };
 
 

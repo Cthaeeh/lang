@@ -38,9 +38,24 @@ InterpretResult VirtualMachine::run(const Chunk &chunk){
                 break;
             }
             case OP_NEGATE: stack_.back() = -stack_.back(); break;
+            case OP_ADD: binaryOp(std::plus<Value>()); break;
+            case OP_SUBTRACT: binaryOp(std::minus<Value>()); break;
+            case OP_MULTIPLY: binaryOp(std::multiplies<Value>()); break;
+            case OP_DIVIDE: binaryOp(std::divides<Value>()); break;
 
         }
     }
 #undef READ_BYTE
 #undef READ_CONSTANT
+}
+
+// TODO benchmark this against a macro i am curious
+// TODO use contracts for shit like this to get compile time checking
+template <class Func>
+void VirtualMachine::binaryOp(Func func) {
+    Value b = stack_.back();
+    stack_.pop_back();
+    Value a = stack_.back();
+    stack_.pop_back();
+    stack_.push_back(func(a,b));
 }
