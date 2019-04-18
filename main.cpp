@@ -7,9 +7,9 @@
 int main() {
 
     Chunk testChunk;
-    testChunk.code.push_back(OP_CONSTANT);
+    testChunk.code()->push_back(OP_CONSTANT);
     auto constant = testChunk.addConstant(1.2);
-    testChunk.code.push_back(constant);
+    testChunk.code()->push_back(constant);
 
     dissassembleChunk(testChunk,"test chunk");
 

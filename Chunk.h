@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <stdint.h>
+#include <memory>
 
 
 enum OpCode : uint8_t {
@@ -14,18 +15,25 @@ enum OpCode : uint8_t {
     OP_CONSTANT
 };
 
-typedef std::vector<uint8_t> Code;
+typedef std::shared_ptr<std::vector<uint8_t>> Code;
 typedef double Value;
-typedef std::vector<Value> Values;
+typedef std::shared_ptr<std::vector<Value>> Values;
 
-struct Chunk{
-    Code code;
-    Values constants;
+class Chunk{
 
-    uint8_t addConstant(Value value){
-        constants.push_back(value);
-        return constants.size() - 1;
-    }
+public:
+    Chunk();
+
+    uint8_t addConstant(Value value);
+
+    Code code() const;
+
+    Values constants() const;
+
+private:
+
+    Code code_;
+    Values constants_;
 };
 
 #endif //VMTEST_CHUNK_H
