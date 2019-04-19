@@ -4,12 +4,22 @@
 #include "Debug.h"
 #include "VirtualMachine.h"
 #include <cppcmb.hpp>
+#include "compiler-frontend/Lexer.h"
 
 void testParserCombinator();
 
 namespace pc = cppcmb;
 
 int main() {
+
+    std::cout << "Lexer:" << std::endl;
+    Lexer lexer("1+2");
+    auto tokens = lexer.lex();
+    for (auto t : *tokens) {
+        std::cout << t.toString();
+    }
+    std::cout << std::endl;
+
 
     testParserCombinator();
 
@@ -59,10 +69,10 @@ Node* makeBinary(Node* rhs, char op, Node* lhs) {
     return new Node(lhs,op,rhs);
 }
 
-Node toNum(std::vector<char> const& chs) {
+Node* toNum(std::vector<char> const& chs) {
     int n = 0;
     for (auto c : chs) n = n * 10 + (c - '0');
-    return Node(n);
+    return new Node(n);
 }
 
 
