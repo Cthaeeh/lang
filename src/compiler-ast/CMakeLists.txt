@@ -12,7 +12,7 @@ if (NOT RETURN_VALUE EQUAL 0)
 endif()
 
 add_custom_command(
-        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/genAst.py --out "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/genAst.py --out "${CMAKE_CURRENT_SOURCE_DIR}/auto-generated/"
         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scripts/genAst.py
         OUTPUT ${OUTPUT_FILES}
         COMMENT "genearting AST with pyhton"
@@ -20,6 +20,7 @@ add_custom_command(
 
 add_library(compiler-ast STATIC
             Token.cpp Token.h
+            AstNode.h
             ${OUTPUT_FILES}
 )
 
