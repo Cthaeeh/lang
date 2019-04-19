@@ -13,16 +13,16 @@ endif()
 
 add_custom_command(
         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/genAst.py --out "${CMAKE_CURRENT_SOURCE_DIR}/auto-generated/"
-        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/scripts/genAst.py
+        DEPENDS AstNode.h Expr.h ${CMAKE_CURRENT_SOURCE_DIR}/scripts/genAst.py
         OUTPUT ${OUTPUT_FILES}
-        COMMENT "genearting AST with pyhton"
+        COMMENT "generating AST with pyhton!"
         )
 
 add_library(compiler-ast STATIC
             Token.cpp Token.h
             AstNode.h
             ${OUTPUT_FILES}
-)
+            Expr.h )
 
 
 

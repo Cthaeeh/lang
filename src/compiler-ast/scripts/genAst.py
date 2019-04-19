@@ -12,7 +12,15 @@ Member = namedtuple('Member', 'type name')
 def writeExpr(outPath, expression):
     filename = outPath + expression.name + ".h"
     with open(filename, 'w') as outFile:
-        outFile.write('// outo-generated file')
+        outFile.write('// auto-generated file\n\n')
+        outFile.write('#ifndef ' + expression.name.upper() + '_H\n')
+        outFile.write('#define ' + expression.name.upper() + '_H\n\n')
+        outFile.write('#include <memory>\n')
+        outFile.write('#include <Expr.h>\n\n')
+        outFile.write('class ' + expression.name + "{\n\n")
+        outFile.write('};\n\n')
+        outFile.write('#endif')
+
 
 
 def writeHeaders(expressions):
