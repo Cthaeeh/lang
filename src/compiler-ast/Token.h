@@ -31,15 +31,22 @@ public:
         EoF
     };
 
-    Token (Type type, std::string lexeme, int line);
+    Token (Type type,const std::string &lexeme, int line);
+
+    Token(const Token& token);
+
+    Token();
+
+    Type type() const;
 
     std::string toString();
 
 private:
 
-    const Type type_;
-    const std::string lexeme_;
-    const int line_;     //TODO make this a more precise location
+    // TODO make this const it must work somehow.
+     Type type_;
+     std::string lexeme_;
+     int line_;     //TODO make this a more precise location
 };
 
 

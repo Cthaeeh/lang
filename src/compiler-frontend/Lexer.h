@@ -9,7 +9,7 @@
 #include <memory>
 #include <vector>
 #include <map>
-#include "../compiler-ast/Token.h"  //TODO fix this so that i dont have the write relative path like that.
+#include <Token.h>  //TODO fix this so that i dont have the write relative path like that.
 
 /**
  * Ultra basic lexer

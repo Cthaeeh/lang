@@ -7,6 +7,10 @@
 
 #include "AstNode.h"
 
+class Expr;
+
+typedef std::shared_ptr<Expr> ExprPtr;
+
 class Expr : public AstNode
 {
 

@@ -5,10 +5,19 @@
 #ifndef VMTEST_PARSER_H
 #define VMTEST_PARSER_H
 
+#include <Expr.h>
+#include "Lexer.h"
 
 class Parser {
 public:
-    static void testAST();
+
+    Parser(const Tokens tokens);
+
+    std::shared_ptr<Expr> parse();
+
+private:
+
+    const Tokens tokens_;
 };
 
 

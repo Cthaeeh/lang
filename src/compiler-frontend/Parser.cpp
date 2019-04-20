@@ -3,10 +3,46 @@
 //
 
 #include "Parser.h"
-#include "../compiler-ast/auto-generated/BinaryExpr.h"
 #include <BinaryExpr.h>
+#include <LiteralExpr.h>
+#include <cppcmb.hpp>
+#include <Token.h>
+#include <iostream>
 
-void Parser::testAST()
+namespace pc = cppcmb;
+
+Parser::Parser(const Tokens tokens) : tokens_(tokens)
 {
-    auto b = BinaryExpr();
+
+}
+
+template <Token::Type type>
+bool is_same_token_type(Token t) { return t.type() == type; }
+
+template <Token::Type type>
+inline constexpr auto match = pc::one[pc::filter(is_same_token_type<type>)];
+
+cppcmb_decl(expr,    ExprPtr);
+cppcmb_decl(primary, ExprPtr);
+
+cppcmb_def(expr) = pc::pass
+                   | (expr & match<Token::PLUS> & primary) [BinaryExpr::make]
+                   | (expr & match<Token::MINUS> & primary) [BinaryExpr::make]
+                   | primary
+                   %= pc::as_memo_d;
+
+cppcmb_def(primary) =
+        (match<Token::NUMBER>) [LiteralExpr::make];
+
+ExprPtr Parser::parse(){
+    auto parser = pc::parser(expr);
+
+    auto tokens = std::vector<Token>({Token(Token::NUMBER,"1",1), Token(Token::PLUS,"+",1) ,Token(Token::NUMBER,"1",1)});
+
+    auto res = parser.parse(tokens);
+    if (res.is_success()) {
+        return res.success().value();
+    } else {
+        throw std::runtime_error("Parsing failed");
+    }
 }

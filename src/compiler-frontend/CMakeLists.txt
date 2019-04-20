@@ -4,3 +4,6 @@ add_library(compiler-frontend STATIC
             Parser.cpp Parser.h)
 
 target_link_libraries(compiler-frontend compiler-ast)
+
+target_include_directories(compiler-frontend PRIVATE ../compiler-ast)
+target_include_directories(compiler-frontend PRIVATE ../compiler-ast/auto-generated)

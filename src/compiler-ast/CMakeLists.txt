@@ -20,9 +20,10 @@ add_custom_command(
 
 add_library(compiler-ast STATIC
             Token.cpp Token.h
-            AstNode.h
-            ${OUTPUT_FILES}
-            Expr.h )
+            AstNode.h Expr.h
+            ${OUTPUT_FILES})
+
+target_include_directories(compiler-ast PRIVATE auto-generated/)
 
 
 

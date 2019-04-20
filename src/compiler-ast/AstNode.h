@@ -5,7 +5,7 @@
 #ifndef VMTEST_ASTNODE_H
 #define VMTEST_ASTNODE_H
 
-#include "Visitor.h"
+#include <Visitor.h>
 #include <memory>
 
 class AstNode {
@@ -13,8 +13,7 @@ public:
 
     virtual void accept(Visitor& v) = 0;
 
-private:
-    std::weak_ptr<AstNode> parent_;
+    std::weak_ptr<AstNode> parent;
 };
 
 

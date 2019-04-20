@@ -16,11 +16,36 @@ def writeExpr(outPath, expression):
         outFile.write('#ifndef ' + expression.name.upper() + '_H\n')
         outFile.write('#define ' + expression.name.upper() + '_H\n\n')
         outFile.write('#include <memory>\n')
-        outFile.write('#include <Expr.h>\n\n')
-        outFile.write('class ' + expression.name + "{\n\n")
+        outFile.write('#include <Expr.h>\n')
+        outFile.write('#include <Token.h>\n\n')
+        outFile.write("class " + expression.name + ";\n\n")
+        outFile.write("typedef std::shared_ptr<" + expression.name + "> " + expression.name + "Ptr;\n\n")
+        outFile.write('class ' + expression.name + ": public Expr {\n\n")
+
+        outFile.write('public:\n')
+        # TODO why can i not pass the class here
+        outFile.write('static ' + 'Expr' + 'Ptr  make(')
+        print(expression.members)
+        for m_counter, member in enumerate(expression.members):
+            if m_counter > 0:
+                outFile.write(',')
+            outFile.write(member.type + ' ' + member.name + "_ ")
+
+        outFile.write(') {\n')
+        outFile.write('    auto e = std::make_shared<' + expression.name + '>();\n')
+        for member in expression.members:
+            outFile.write('    e->' + member.name + ' = ' + member.name + "_;\n")
+            #if member.type == 'ExprPtr':
+            #    outFile.write('    ' + member.name + "_->parent = e;\n")
+            outFile.write('\n')
+        outFile.write('    return e;\n}\n\n')
+        outFile.write('virtual void accept(Visitor& v) override\n{\n    v.visit(*this);\n}\n\n')
+
+        for member in expression.members:
+            outFile.write(member.type + " " + member.name + ";\n")
+
         outFile.write('};\n\n')
         outFile.write('#endif')
-
 
 
 def writeHeaders(expressions):
@@ -30,6 +55,30 @@ def writeHeaders(expressions):
         output_files += (node.name + ".h")
 
     sys.stdout.write(';'.join(output_files))
+
+
+def writeVisitor(outPath, expressions):
+    className = "Visitor"
+    filename = outPath + className + ".h"
+    with open(filename, 'w') as outFile:
+        outFile.write('// auto-generated file\n\n')
+        outFile.write('#ifndef ' + className.upper() + '_H\n')
+        outFile.write('#define ' + className.upper() + '_H\n\n')
+        outFile.write('#include <memory>\n')
+        outFile.write('#include "../Expr.h"\n\n')
+
+        for expr in expressions:
+            outFile.write("class " + expr.name + ";\n")
+
+        outFile.write('class ' + className + "{\n\n")
+        outFile.write('public:\n')
+
+        for expr in expressions:
+            outFile.write(
+                "    virtual void visit(" + expr.name + "&" + " " + expr.name[0].lower() + expr.name[1:] + ") = 0;\n\n")
+
+        outFile.write('};\n\n')
+        outFile.write('#endif')
 
 
 def main(args):
@@ -44,11 +93,12 @@ def main(args):
                         required=False)
     results = parser.parse_args(args)
 
-    expressions = [Expression('BinaryExpr', [Member('Expression', 'lhs'),
-                                             Member('Expression', 'rhs'),
-                                             Member('Token', 'op')]),
-                   Expression('UnaryExpr', [Member('Expression', 'lhs'),
-                                            Member('Token', 'op')])]
+    expressions = [Expression('BinaryExpr', [Member('ExprPtr', 'left'),
+                                             Member('Token', 'op'),
+                                             Member('ExprPtr', 'right')]),
+                   Expression('UnaryExpr', [Member('ExprPtr', 'left'),
+                                            Member('Token', 'op')]),
+                   Expression('LiteralExpr', [Member('Token', 'literal')])]
 
     # If headers flag is set write all headers that this script will generate to std::cout.
     if (results.headers):
@@ -60,6 +110,7 @@ def main(args):
         os.makedirs(results.out)
         for expression in expressions:
             writeExpr(results.out, expression)
+        writeVisitor(results.out, expressions)
 
 
 if __name__ == "__main__":

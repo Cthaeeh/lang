@@ -3,12 +3,12 @@
 #include "Chunk.h"
 #include "Debug.h"
 #include "VirtualMachine.h"
-#include <cppcmb.hpp>
 #include "compiler-frontend/Lexer.h"
+#include "compiler-frontend/Parser.h"
+#include <BinaryExpr.h>
 
 void testParserCombinator();
 
-namespace pc = cppcmb;
 
 int main() {
 
@@ -16,12 +16,14 @@ int main() {
     Lexer lexer("1+2");
     auto tokens = lexer.lex();
     for (auto t : *tokens) {
-        std::cout << t.toString();
+        std::cout << " " << t.toString();
     }
     std::cout << std::endl;
 
+    Parser parser(tokens);
+    auto ast = parser.parse();
 
-    testParserCombinator();
+    // TODO GodeGen for creating a chunk
 
     Chunk testChunk;
     testChunk.appendConstant(1.2, 123);
@@ -59,45 +61,4 @@ struct Node{
     }
 };
 
-template <char Ch>
-bool is_same_char(char c) { return c == Ch; }
 
-template <char Ch>
-inline constexpr auto match = pc::one[pc::filter(is_same_char<Ch>)];
-
-Node* makeBinary(Node* rhs, char op, Node* lhs) {
-    return new Node(lhs,op,rhs);
-}
-
-Node* toNum(std::vector<char> const& chs) {
-    int n = 0;
-    for (auto c : chs) n = n * 10 + (c - '0');
-    return new Node(n);
-}
-
-
-cppcmb_decl(expr,   Node*);
-cppcmb_decl(num,    Node*);
-cppcmb_decl(digit,  char);
-
-cppcmb_def(expr) = pc::pass
-        | (expr & match<'+'> & num) [makeBinary]
-        | (expr & match<'-'> & num) [makeBinary]
-        | num
-        %= pc::as_memo_d;
-
-cppcmb_def(num) =
-        (+digit) [toNum];
-
-cppcmb_def(digit) = pc::one[pc::filter(isdigit)];
-
-void testParserCombinator() {
-    auto parser = pc::parser(expr);
-
-    auto res = parser.parse("1+13");
-    if (res.is_success()) {
-        std::cout << res.success().value()->toString() << std::endl;
-    } else {
-        std::cout << "parse fail" << std::endl;
-    }
-}
