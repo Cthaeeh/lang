@@ -39,6 +39,10 @@ public:
 
     Type type() const;
 
+    int line() const;
+
+    std::string lexeme() const;
+
     std::string toString();
 
 private:

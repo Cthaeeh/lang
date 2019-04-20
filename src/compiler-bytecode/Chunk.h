@@ -35,6 +35,8 @@ public:
 
     void appendConstant(Value value, int lineNumber);
 
+    void clear();
+
     int lineNumberOf(Code::size_type opCodePos) const;
 
     std::shared_ptr<Code> code() const;

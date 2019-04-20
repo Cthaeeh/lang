@@ -16,8 +16,8 @@ def writeExpr(outPath, expression):
         outFile.write('#ifndef ' + expression.name.upper() + '_H\n')
         outFile.write('#define ' + expression.name.upper() + '_H\n\n')
         outFile.write('#include <memory>\n')
-        outFile.write('#include <Expr.h>\n')
-        outFile.write('#include <Token.h>\n\n')
+        outFile.write('#include <../Expr.h>\n')
+        outFile.write('#include <../Token.h>\n\n')
         outFile.write("class " + expression.name + ";\n\n")
         outFile.write("typedef std::shared_ptr<" + expression.name + "> " + expression.name + "Ptr;\n\n")
         outFile.write('class ' + expression.name + ": public Expr {\n\n")
@@ -25,7 +25,6 @@ def writeExpr(outPath, expression):
         outFile.write('public:\n')
         # TODO why can i not pass the class here
         outFile.write('static ' + 'Expr' + 'Ptr  make(')
-        print(expression.members)
         for m_counter, member in enumerate(expression.members):
             if m_counter > 0:
                 outFile.write(',')
@@ -35,8 +34,8 @@ def writeExpr(outPath, expression):
         outFile.write('    auto e = std::make_shared<' + expression.name + '>();\n')
         for member in expression.members:
             outFile.write('    e->' + member.name + ' = ' + member.name + "_;\n")
-            #if member.type == 'ExprPtr':
-            #    outFile.write('    ' + member.name + "_->parent = e;\n")
+            if member.type == 'ExprPtr':
+                outFile.write('    ' + member.name + "_->parent = e;\n")
             outFile.write('\n')
         outFile.write('    return e;\n}\n\n')
         outFile.write('virtual void accept(Visitor& v) override\n{\n    v.visit(*this);\n}\n\n')
@@ -49,10 +48,12 @@ def writeExpr(outPath, expression):
 
 
 def writeHeaders(expressions):
-    output_files = []
+    output_files = set()
 
     for node in expressions:
-        output_files += (node.name + ".h")
+        output_files.add(node.name + ".h")
+
+    output_files.add("Visitor.h")
 
     sys.stdout.write(';'.join(output_files))
 
@@ -65,7 +66,6 @@ def writeVisitor(outPath, expressions):
         outFile.write('#ifndef ' + className.upper() + '_H\n')
         outFile.write('#define ' + className.upper() + '_H\n\n')
         outFile.write('#include <memory>\n')
-        outFile.write('#include "../Expr.h"\n\n')
 
         for expr in expressions:
             outFile.write("class " + expr.name + ";\n")

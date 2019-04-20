@@ -31,6 +31,16 @@ Token::Type Token::type() const
     return type_;
 }
 
+int Token::line() const
+{
+    return line_;
+}
+
+std::string Token::lexeme() const
+{
+    return lexeme_;
+}
+
 std::string Token::toString() {
     switch (type_) {
         case EoF:

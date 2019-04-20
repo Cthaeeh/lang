@@ -25,6 +25,13 @@ void Chunk::appendConstant(Value value, int lineNumber)
     appendOp(constantPos, lineNumber);
 }
 
+void Chunk::clear()
+{
+    lineNumbers_.clear();
+    code_->clear();
+    constants_->clear();
+}
+
 int Chunk::lineNumberOf(Code::size_type opCodePos) const
 {
     return lineNumbers_.at(opCodePos);

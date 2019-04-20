@@ -7,6 +7,7 @@
 
 
 #include <Visitor.h>
+#include "Expr.h"
 
 class NotSoPrettyPrinter : public Visitor{
 public:

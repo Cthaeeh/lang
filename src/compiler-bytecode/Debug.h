@@ -8,6 +8,7 @@
 #include "Chunk.h"
 #include <string>
 
+//TODO rename this to dissassemble or somethin
 
 void dissassembleChunk(const Chunk &chunk, const std::string &name);
 

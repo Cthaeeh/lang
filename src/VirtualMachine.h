@@ -6,7 +6,7 @@
 #define VMTEST_VIRTUALMACHINE_H
 
 
-#include "Chunk.h"
+#include "compiler-bytecode/Chunk.h"
 
 
 enum class InterpretResult{
