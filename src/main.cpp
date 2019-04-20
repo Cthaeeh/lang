@@ -6,6 +6,7 @@
 #include "compiler-frontend/Lexer.h"
 #include "compiler-frontend/Parser.h"
 #include <BinaryExpr.h>
+#include <NotSoPrettyPrinter.h>
 
 void testParserCombinator();
 
@@ -22,6 +23,9 @@ int main() {
 
     Parser parser(tokens);
     auto ast = parser.parse();
+
+    NotSoPrettyPrinter printer;
+    std::cout << "AST:" << printer.print(ast);
 
     // TODO GodeGen for creating a chunk
 

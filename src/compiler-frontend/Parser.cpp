@@ -11,7 +11,7 @@
 
 namespace pc = cppcmb;
 
-Parser::Parser(const Tokens tokens) : tokens_(tokens)
+Parser::Parser(const TokensConstPtr tokens) : tokens_(tokens)
 {
 
 }
@@ -37,9 +37,7 @@ cppcmb_def(primary) =
 ExprPtr Parser::parse(){
     auto parser = pc::parser(expr);
 
-    auto tokens = std::vector<Token>({Token(Token::NUMBER,"1",1), Token(Token::PLUS,"+",1) ,Token(Token::NUMBER,"1",1)});
-
-    auto res = parser.parse(tokens);
+    auto res = parser.parse(*tokens_);
     if (res.is_success()) {
         return res.success().value();
     } else {

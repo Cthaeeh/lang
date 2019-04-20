@@ -11,14 +11,14 @@ const std::map<std::string, Token::Type > Lexer::keywords_ =  {{"if",Token::IF},
                                                                {"return",Token::RETURN},
                                                                {"while",Token::WHILE}};
 
-Lexer::Lexer(std::string source)
+Lexer::Lexer(const std::string &source)
 :source_(source),
  tokens_(std::make_shared<std::vector<Token>>())
 {
 
 }
 
-const Tokens Lexer::lex()
+TokensConstPtr Lexer::lex()
 {
     while (!isAtEnd()) {
         start = current;

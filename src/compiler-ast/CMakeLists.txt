@@ -21,7 +21,8 @@ add_custom_command(
 add_library(compiler-ast STATIC
             Token.cpp Token.h
             AstNode.h Expr.h
-            ${OUTPUT_FILES})
+            NotSoPrettyPrinter.cpp NotSoPrettyPrinter.h
+            ${OUTPUT_FILES} )
 
 target_include_directories(compiler-ast PRIVATE auto-generated/)
 

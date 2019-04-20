@@ -17,13 +17,14 @@
  * TODO support literals
  */
 
-typedef std::shared_ptr<std::vector<Token>> Tokens;
+typedef std::shared_ptr<std::vector<Token>> TokensPtr;
+typedef std::shared_ptr<const std::vector<Token>> TokensConstPtr;
 class Lexer {
 
 public:
-    Lexer(std::string source);
+    Lexer(const std::string &source);
 
-    const Tokens lex();
+    TokensConstPtr lex();
 
 private:
 
@@ -40,7 +41,7 @@ private:
     static bool isAlpha(char c);
 
     const std::string source_;
-    const Tokens tokens_;
+    const TokensPtr tokens_;
     int start = 0;
     int current = 0;
     int line = 0;

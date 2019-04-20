@@ -11,13 +11,13 @@
 class Parser {
 public:
 
-    Parser(const Tokens tokens);
+    Parser(const TokensConstPtr tokens);
 
     std::shared_ptr<Expr> parse();
 
 private:
 
-    const Tokens tokens_;
+    const TokensConstPtr tokens_;
 };
 
 
