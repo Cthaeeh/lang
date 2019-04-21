@@ -25,7 +25,7 @@ TokensConstPtr Lexer::lex()
         scanToken();
     }
 
-    tokens_->push_back(Token(Token::EoF,"",line));
+    //tokens_->push_back(Token(Token::EoF,"",line));
     return tokens_;
 }
 

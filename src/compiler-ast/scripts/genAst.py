@@ -5,6 +5,9 @@ import os
 
 from collections import namedtuple
 
+
+#TODO this is horrible but whatever.
+
 Expression = namedtuple('Expression', 'name members')
 Member = namedtuple('Member', 'type name')
 
@@ -32,7 +35,8 @@ def writeExpr(outPath, expression):
 
         outFile.write(') {\n')
 
-        outFile.write('    struct make_shared_enabler : public ' + expression.name + ' { make_shared_enabler(')
+        outFile.write('    struct make_shared_enabler_' + expression.name + ' : public ' + expression.name + ' { make_shared_enabler_' + expression.name + '(')
+
         for m_counter, member in enumerate(expression.members):
             if m_counter > 0:
                 outFile.write(',')
@@ -46,7 +50,7 @@ def writeExpr(outPath, expression):
 
         outFile.write(') {}};\n')
 
-        outFile.write('    auto e = std::make_shared<make_shared_enabler>(')
+        outFile.write('    auto e = std::make_shared<make_shared_enabler_' + expression.name + '>(')
 
         for m_counter, member in enumerate(expression.members):
             if m_counter > 0:
@@ -72,7 +76,7 @@ def writeExpr(outPath, expression):
             if m_counter > 0:
                 outFile.write(',')
             outFile.write(member.type + ' ' + member.name )
-        outFile.write(expression.name + ') : ')
+        outFile.write(') : ')
 
         for m_counter, member in enumerate(expression.members):
             if m_counter > 0:
