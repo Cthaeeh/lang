@@ -39,7 +39,7 @@ void CodeGen::visit(BinaryExpr &el)
 
 void CodeGen::visit(UnaryExpr &el)
 {
-    el.left->accept(*this);
+    el.right->accept(*this);
     switch (el.op.type()) {
         case Token::MINUS:
             chunk.appendSimpleOp(OP_NEGATE, el.op.line());

@@ -30,7 +30,7 @@ void NotSoPrettyPrinter::visit(BinaryExpr &el)
 void NotSoPrettyPrinter::visit(UnaryExpr &el)
 {
     std::string result = "[left: ";
-    el.left->accept(*this);
+    el.right->accept(*this);
     result += cache_;
     result += " op: " + el.op.toString();
     result += " ]";

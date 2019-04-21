@@ -137,8 +137,8 @@ def main(args):
     expressions = [Expression('BinaryExpr', [Member('ExprPtr', 'left'),
                                              Member('Token', 'op'),
                                              Member('ExprPtr', 'right')]),
-                   Expression('UnaryExpr', [Member('ExprPtr', 'left'),
-                                            Member('Token', 'op')]),
+                   Expression('UnaryExpr', [Member('Token', 'op'),
+                                            Member('ExprPtr', 'right')]),
                    Expression('LiteralExpr', [Member('Token', 'literal')])]
 
     # If headers flag is set write all headers that this script will generate to std::cout.

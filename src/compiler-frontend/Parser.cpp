@@ -5,6 +5,7 @@
 #include "Parser.h"
 #include <BinaryExpr.h>
 #include <LiteralExpr.h>
+#include <UnaryExpr.h>
 #include <cppcmb.hpp>
 #include <Token.h>
 #include <iostream>
@@ -24,6 +25,7 @@ inline constexpr auto match = pc::one[pc::filter(is_same_token_type<type>)];
 
 cppcmb_decl(expr,    ExprPtr);
 cppcmb_decl(mul,     ExprPtr);
+cppcmb_decl(unary,   ExprPtr);
 cppcmb_decl(primary, ExprPtr);
 
 cppcmb_def(expr) = pc::pass
@@ -33,8 +35,13 @@ cppcmb_def(expr) = pc::pass
                    %= pc::as_memo_d;
 
 cppcmb_def(mul) = pc::pass
-                   | (mul & match<Token::STAR> & primary) [BinaryExpr::make]
-                   | (mul & match<Token::SLASH> & primary) [BinaryExpr::make]
+                   | (mul & match<Token::STAR> & unary) [BinaryExpr::make]
+                   | (mul & match<Token::SLASH> & unary) [BinaryExpr::make]
+                   | unary
+                   %= pc::as_memo_d;
+
+cppcmb_def(unary) = pc::pass
+                   | (match<Token::MINUS> & primary) [UnaryExpr::make]
                    | primary
                    %= pc::as_memo_d;
 
