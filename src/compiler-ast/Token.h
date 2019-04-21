@@ -10,6 +10,7 @@
 class Token {
 
 public:
+
     enum Type {
         // Single-character tokens.
         LEFT_PAREN, RIGHT_PAREN, LEFT_BRACE, RIGHT_BRACE,
@@ -33,24 +34,20 @@ public:
 
     Token (Type type,const std::string &lexeme, int line);
 
-    Token(const Token& token);
-
-    Token();
+    //Token();
 
     Type type() const;
 
     int line() const;
 
-    std::string lexeme() const;
+    const std::string& lexeme() const;
 
     std::string toString();
 
 private:
-
-    // TODO make this const it must work somehow.
-     Type type_;
-     std::string lexeme_;
-     int line_;     //TODO make this a more precise location
+    Type type_;
+    std::string lexeme_;
+    int line_;     //TODO make this a more precise location
 };
 
 

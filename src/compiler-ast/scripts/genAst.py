@@ -23,25 +23,62 @@ def writeExpr(outPath, expression):
         outFile.write('class ' + expression.name + ": public Expr {\n\n")
 
         outFile.write('public:\n')
-        # TODO why can i not pass the class here
-        outFile.write('static ' + 'Expr' + 'Ptr  make(')
+        outFile.write('static ExprPtr  make(')
+
         for m_counter, member in enumerate(expression.members):
             if m_counter > 0:
                 outFile.write(',')
-            outFile.write(member.type + ' ' + member.name + "_ ")
+            outFile.write(member.type + ' ' + member.name)
 
         outFile.write(') {\n')
-        outFile.write('    auto e = std::make_shared<' + expression.name + '>();\n')
+
+        outFile.write('    struct make_shared_enabler : public ' + expression.name + ' { make_shared_enabler(')
+        for m_counter, member in enumerate(expression.members):
+            if m_counter > 0:
+                outFile.write(',')
+            outFile.write(member.type + ' ' + member.name)
+        outFile.write(') :' + expression.name + '(')
+
+        for m_counter, member in enumerate(expression.members):
+            if m_counter > 0:
+                outFile.write(',')
+            outFile.write(member.name)
+
+        outFile.write(') {}};\n')
+
+        outFile.write('    auto e = std::make_shared<make_shared_enabler>(')
+
+        for m_counter, member in enumerate(expression.members):
+            if m_counter > 0:
+                outFile.write(',')
+            outFile.write(member.name)
+        outFile.write(');\n')
+
         for member in expression.members:
-            outFile.write('    e->' + member.name + ' = ' + member.name + "_;\n")
             if member.type == 'ExprPtr':
-                outFile.write('    ' + member.name + "_->parent = e;\n")
-            outFile.write('\n')
+                outFile.write('    ' + member.name + "->parent = e;\n")
+
         outFile.write('    return e;\n}\n\n')
         outFile.write('virtual void accept(Visitor& v) override\n{\n    v.visit(*this);\n}\n\n')
 
         for member in expression.members:
             outFile.write(member.type + " " + member.name + ";\n")
+
+        outFile.write('private:\n\n')
+
+        outFile.write(expression.name + '(')
+
+        for m_counter, member in enumerate(expression.members):
+            if m_counter > 0:
+                outFile.write(',')
+            outFile.write(member.type + ' ' + member.name )
+        outFile.write(expression.name + ') : ')
+
+        for m_counter, member in enumerate(expression.members):
+            if m_counter > 0:
+                outFile.write(',')
+            outFile.write(member.name +'(' +member.name +')')
+        outFile.write('{ }\n\n')
 
         outFile.write('};\n\n')
         outFile.write('#endif')

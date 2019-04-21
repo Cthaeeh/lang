@@ -14,16 +14,10 @@ Token::Token (Type type,
 
 }
 
-Token::Token(const Token &token)
-    :type_(token.type_),
-     lexeme_(token.lexeme_),
-     line_(token.line_)
-{}
-
-Token::Token()
-    :type_(Token::EoF),
-     lexeme_(""),
-     line_(1){}
+//Token::Token()
+//    :type_(Token::EoF),
+//     lexeme_(""),
+//     line_(1){}
 
 
 Token::Type Token::type() const
@@ -36,7 +30,7 @@ int Token::line() const
     return line_;
 }
 
-std::string Token::lexeme() const
+const std::string& Token::lexeme() const
 {
     return lexeme_;
 }
