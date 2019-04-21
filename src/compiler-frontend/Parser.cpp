@@ -38,8 +38,10 @@ cppcmb_def(mul) = pc::pass
                    | primary
                    %= pc::as_memo_d;
 
-cppcmb_def(primary) =
-        (match<Token::NUMBER>) [LiteralExpr::make];
+cppcmb_def(primary) = pc::pass
+                   | (match<Token::NUMBER>) [LiteralExpr::make]
+                   | (match<Token::LEFT_PAREN> & expr & match<Token::RIGHT_PAREN>) [pc::select<1>]
+                   %= pc::as_memo_d;
 
 ExprPtr Parser::parse(){
     auto parser = pc::parser(expr);

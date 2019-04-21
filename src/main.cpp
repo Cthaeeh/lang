@@ -20,7 +20,7 @@ int main() {
     std::cout << "AST:" << std::endl << printer1.print(testExpr) << std::endl;
 
     std::cout << "Lexer:" << std::endl;
-    Lexer lexer("1/2");
+    Lexer lexer("(1/2) + 3");
     auto tokens = lexer.lex();
     for (auto t : *tokens) {
         std::cout << " " << t.toString();
