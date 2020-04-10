@@ -10,6 +10,7 @@
 #include <LiteralExpr.h>
 #include <NotSoPrettyPrinter.h>
 #include <include/cxxopts.hpp>
+#include <fstream>
 
 namespace cg = aeeh::code_gen;
 
@@ -40,6 +41,8 @@ int main(int argc, char** argv)
 
 	if (outputAssembly) {
 		auto assembly = cg::generateAssembly(ast);
+		std::ofstream out("output.asm");
+		out << assembly;
 	} else {
         CodeGen codeGen;
         auto chunk = codeGen.generate(ast);
