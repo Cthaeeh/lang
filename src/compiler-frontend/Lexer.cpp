@@ -64,7 +64,9 @@ void Lexer::scanToken() {
             } else if (isAlpha(c))  {
                 identifier();
             } else {
-                throw std::runtime_error("Unexpected character" + c);   // TODO serious error propagation, dont just kill the app.
+                throw std::runtime_error(
+                        std::string("Unexpected character '") + c + "'");   
+                // TODO serious error propagation, dont just kill the app.
             }
     }
 

@@ -1,16 +1,17 @@
-#include <iostream>
-#include <Chunk.h>
-#include <Debug.h>
 #include "VirtualMachine.h"
-#include <Lexer.h>
-#include <Parser.h>
+#include <BinaryExpr.h>
+#include <Chunk.h>
 #include <CodeGen.h>
 #include <CodeGenAssembly.h>
-#include <BinaryExpr.h>
+#include <Debug.h>
+#include <Lexer.h>
 #include <LiteralExpr.h>
 #include <NotSoPrettyPrinter.h>
-#include <include/cxxopts.hpp>
+#include <Parser.h>
 #include <fstream>
+#include <include/cxxopts.hpp>
+#include <iostream>
+#include <string>
 
 namespace cg = aeeh::code_gen;
 
@@ -53,6 +54,7 @@ int main(int argc, char** argv)
         vm.interpret(chunk);
 	}
 
+    auto  sddfds    = std::vector< std::string > {};
+
     return 0;
 }
-
