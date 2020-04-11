@@ -6,4 +6,5 @@ set(CMAKE_CXX_COMPILER clang++-9)
 
 include_directories("include/CppCmb")
 include_directories("include/cxxopts")
+include_directories("include/NamedType")
 add_subdirectory(src)

@@ -1,3 +1,4 @@
+#include "underlying_functionalities.hpp"
 #include <BinaryExpr.h>
 #include <LiteralExpr.h>
 #include <UnaryExpr.h>
@@ -6,41 +7,29 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <named_type.hpp>
 
 namespace aeeh {
 namespace code_gen {
 namespace detail {
 
-// TODO use better strong types. (There are libraries for this)
-struct ErrorCode {
-  explicit ErrorCode(size_t code) : code(code) {}
+using ErrorCode = fluent::NamedType<size_t, struct ErrorCodeParameter>;
 
-  size_t code;
-};
+using Label = fluent::NamedType<std::string, struct LabelParameter>;//, fluent::Addable, fluent::MethodCallable>;
 
-struct Symbol {
-  explicit Symbol(const std::string &symbol) : symbol(symbol) {}
-
-  std::string symbol;
-};
-
-struct Text {
-  explicit Text(const std::string &text) : text(text) {}
-
-  std::string text;
-};
+using Data = fluent::NamedType<std::string, struct DataParameter>;//, fluent::MethodCallable>;
 
 struct DataSectionEntry {
-  Symbol symbol;
-  Text text;
+  Label label;
+  Data data;
 };
 
 struct BssSectionEntry {
-  Symbol symbol;
+  Label label;
   size_t numberOfBytes;
 };
 
-using TextSectionEntry = std::string;
+using TextSectionEntry = Label;
 
 // TODO move this whole sections stuff to seperate file.
 // TODO maybe could we only work on symbols ?
@@ -48,19 +37,19 @@ DataSectionEntry
 uniquify(const DataSectionEntry &entry,
          const std::vector<DataSectionEntry> &existingEntries) {
 
-  auto hasSymbol = [&](const Symbol &symbol) {
-    return [&symbol](const DataSectionEntry &e) {
-      return e.symbol.symbol == symbol.symbol;
+  auto hasSymbol = [&](const Label &label) {
+    return [&label](const DataSectionEntry &e) {
+      return e.label.get() == label.get();
     };
   };
 
-  auto uniquifyiedSymbol = entry.symbol;
+  auto uniquifyiedLabel = entry.label;
 
   while (std::any_of(existingEntries.begin(), existingEntries.end(),
-                     hasSymbol(uniquifyiedSymbol))) {
-    uniquifyiedSymbol.symbol += "_u";
+                     hasSymbol(uniquifyiedLabel))) {
+    uniquifyiedLabel.get() += "_u";
   }
-  return DataSectionEntry{uniquifyiedSymbol, entry.text};
+  return DataSectionEntry{uniquifyiedLabel, entry.data};
 }
 
 class Sections {
@@ -99,19 +88,19 @@ printDataSection(const std::vector<DataSectionEntry> &entries) {
   result += "section .data\n";
 
   // TODO use replace_all(text,"\n","",10"");
-  for (const auto &[symbol, text] : entries) {
-    result += "	       " + symbol.symbol + " db \"" + text.text + "\"\n";
+  for (const auto &[label, data] : entries) {
+    result += "	       " + data.get() + " db \"" + data.get()+ "\"\n";
   }
   return result;
 }
 
 // TODO these are labels not symbols.
-inline std::string printTextSection(const std::vector<std::string> &symbols) {
+inline std::string printTextSection(const std::vector<Label> &labels) {
   auto result = std::string();
   result += "section .text\n";
 
-  for (const auto &symbol : symbols) {
-    result += "	       global " + symbol + "\n";
+  for (const auto &label : labels) {
+    result += "	       global " + label.get() + "\n";
   }
   return result;
 }
@@ -121,22 +110,22 @@ printBssSection(const std::vector<BssSectionEntry> &entries) {
   auto result = std::string();
   result += "section .bss\n";
 
-  for (const auto &[symbol, numberOfBytes] : entries) {
-    result += "	        " + symbol.symbol + " resb " +
+  for (const auto &[label, numberOfBytes] : entries) {
+    result += "	        " + label.get() + " resb " +
               std::to_string(numberOfBytes) + "\n";
   }
   return result;
 }
 
 inline AsmPiece printStringInline(const std::string &str, Sections &sections) {
-  auto entry = sections.addDataSectionEntry({Symbol("printStr"), Text(str)});
+  auto entry = sections.addDataSectionEntry({Label("printStr"), Data(str)});
 
   auto asmPiece = AsmPiece();
   asmPiece += "		mov rax, 1\n"; // Id for sys_write is 1.
   asmPiece += "		mov rdi, 1\n"; // standard output.
-  asmPiece += "		mov rsi, " + entry.symbol.symbol + "\n";
+  asmPiece += "		mov rsi, " + entry.label.get() + "\n";
   asmPiece +=
-      "		mov rdx, " + std::to_string(entry.text.text.size()) + "\n";
+      "		mov rdx, " + std::to_string(entry.data.get().size()) + "\n";
   asmPiece += "		syscall\n\n";
   return asmPiece;
 }
@@ -144,10 +133,10 @@ inline AsmPiece printStringInline(const std::string &str, Sections &sections) {
 inline AsmPiece printRaxInline(Sections &sections) {
 
   auto asmPiece = AsmPiece();
-  auto digitString = sections.addBssSectionEntry({Symbol("digitStr"), 100});
+  auto digitString = sections.addBssSectionEntry({Label("digitStr"), 100});
 
   // TODO using 1: and 2: as labels just inline doesn't work, because what if two printRaxInline calls come after another.
-  asmPiece += "    mov rcx, " + digitString.symbol.symbol +
+  asmPiece += "    mov rcx, " + digitString.label.get() +
               "\n" // Let rcx point to the begin of the digitStr
               "1:\n"
               "    mov rdx, 0\n"
@@ -169,7 +158,7 @@ inline AsmPiece printRaxInline(Sections &sections) {
               "    mov rdx, 1\n"
               "    syscall\n"
               "    cmp rcx, " +
-              digitString.symbol.symbol +
+              digitString.label.get() +
               "\n"
               "    jge 2b\n";
 
@@ -181,7 +170,7 @@ inline std::string function(const std::string &name) { return name + ":\n"; }
 inline std::string sys_exit(const ErrorCode &errorCode) {
   return "		mov rax, 60\n"
          "		mov rdi, " +
-         std::to_string(errorCode.code) +
+         std::to_string(errorCode.get()) +
          "\n"
          "		syscall\n";
 }
@@ -195,7 +184,7 @@ inline std::string composeProgram() {
   // TODO wrap this somehow
   // We must should always provide a _start routine.
   result += detail::function("_start");
-  sections.addTextSectionEntry("_start");
+  sections.addTextSectionEntry(Label("_start"));
 
   result += printStringInline("I am going to print register rax'", sections);
   result += printRaxInline(sections);
