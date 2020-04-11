@@ -4,20 +4,29 @@
 #include <UnaryExpr.h>
 #include <algorithm>
 #include <iostream>
+#include <named_type.hpp>
 #include <string>
 #include <utility>
 #include <vector>
-#include <named_type.hpp>
+#include <BinaryExpr.h>
+#include <UnaryExpr.h>
+#include <LiteralExpr.h>
 
 namespace aeeh {
 namespace code_gen {
 namespace detail {
 
+// TODO strong types are broken == and method calling does not work and such.
+
 using ErrorCode = fluent::NamedType<size_t, struct ErrorCodeParameter>;
 
-using Label = fluent::NamedType<std::string, struct LabelParameter>;//, fluent::Addable, fluent::MethodCallable>;
+using Label =
+    fluent::NamedType<std::string,
+                      struct LabelParameter>; //, fluent::Addable,
+                                              // fluent::MethodCallable>;
 
-using Data = fluent::NamedType<std::string, struct DataParameter>;//, fluent::MethodCallable>;
+using Data = fluent::NamedType<std::string, struct DataParameter,
+                               fluent::Comparable>; //, fluent::MethodCallable>;
 
 struct DataSectionEntry {
   Label label;
@@ -32,7 +41,7 @@ struct BssSectionEntry {
 using TextSectionEntry = Label;
 
 // TODO move this whole sections stuff to seperate file.
-// TODO maybe could we only work on symbols ?
+// TODO maybe could we only work on labels ?
 DataSectionEntry
 uniquify(const DataSectionEntry &entry,
          const std::vector<DataSectionEntry> &existingEntries) {
@@ -52,11 +61,27 @@ uniquify(const DataSectionEntry &entry,
   return DataSectionEntry{uniquifyiedLabel, entry.data};
 }
 
+Label uniquify(const Label &label,
+               const std::vector<Label> &alreadyDefinedLabels) {
+
+  auto uniquifyiedLabel = label;
+
+  while (std::any_of(
+      alreadyDefinedLabels.begin(), alreadyDefinedLabels.end(),
+      [&](const Label &l) { return l.get() == uniquifyiedLabel.get(); })) {
+    uniquifyiedLabel.get() += "_u";
+  }
+  return uniquifyiedLabel;
+}
+
 class Sections {
 private:
   std::vector<DataSectionEntry> dataSection_;
   std::vector<BssSectionEntry> bssSection_;
   std::vector<TextSectionEntry> textSection_;
+
+  // TODO this is so hacky ...
+  std::vector<Label> alreadyDefinedLabels;
 
 public:
   const std::vector<DataSectionEntry> &dataSection() { return dataSection_; }
@@ -77,7 +102,16 @@ public:
     return bssEntry;
   }
 
-  void addTextSectionEntry(const TextSectionEntry &dataEntry) {}
+  void addTextSectionEntry(const TextSectionEntry &textSectionEntry) {
+    // TODO uniquify as well
+    textSection_.push_back(textSectionEntry);
+  }
+
+  Label addLabel(const Label &label) {
+    auto uniquifyied = uniquify(label, alreadyDefinedLabels);
+    alreadyDefinedLabels.push_back(uniquifyied);
+    return uniquifyied;
+  }
 };
 
 using AsmPiece = std::string;
@@ -89,18 +123,17 @@ printDataSection(const std::vector<DataSectionEntry> &entries) {
 
   // TODO use replace_all(text,"\n","",10"");
   for (const auto &[label, data] : entries) {
-    result += "	       " + data.get() + " db \"" + data.get()+ "\"\n";
+    result += "    " + label.get() + " db \"" + data.get() + "\"\n";
   }
   return result;
 }
 
-// TODO these are labels not symbols.
 inline std::string printTextSection(const std::vector<Label> &labels) {
   auto result = std::string();
   result += "section .text\n";
 
   for (const auto &label : labels) {
-    result += "	       global " + label.get() + "\n";
+    result += "    global " + label.get() + "\n";
   }
   return result;
 }
@@ -111,8 +144,8 @@ printBssSection(const std::vector<BssSectionEntry> &entries) {
   result += "section .bss\n";
 
   for (const auto &[label, numberOfBytes] : entries) {
-    result += "	        " + label.get() + " resb " +
-              std::to_string(numberOfBytes) + "\n";
+    result +=
+        "    " + label.get() + " resb " + std::to_string(numberOfBytes) + "\n";
   }
   return result;
 }
@@ -134,33 +167,40 @@ inline AsmPiece printRaxInline(Sections &sections) {
 
   auto asmPiece = AsmPiece();
   auto digitString = sections.addBssSectionEntry({Label("digitStr"), 100});
+  auto loopToGenerateStr = sections.addLabel(Label("loop"));
+  auto looptoPrintStr = sections.addLabel(Label("loop"));
 
-  // TODO using 1: and 2: as labels just inline doesn't work, because what if two printRaxInline calls come after another.
   asmPiece += "    mov rcx, " + digitString.label.get() +
               "\n" // Let rcx point to the begin of the digitStr
-              "1:\n"
+              + loopToGenerateStr.get() +
+              ":\n"
               "    mov rdx, 0\n"
               // reset rdx because otherwise it will mess up the division
               "    mov rbx, 10\n"
               "    div rbx\n" // divide rax by 10 -> remainder will be in rdx.
-              "    add rdx, 48\n" // convert to the ascii representation.
-              "    "
+              "    add rdx, 48\n"   // convert to the ascii representation.
               "    mov [rcx], dl\n" // Move the lower byte of rdx to digitStr.
               "    inc rcx\n"
               "    cmp rax, 0\n" // check if we are done
-              "    jne 1b\n";
+              "    jne " +
+              loopToGenerateStr.get() + "\n";
 
-  asmPiece += "2:\n"
+  asmPiece += looptoPrintStr.get() +
+              ":\n"
               "    dec rcx\n"
               "    mov rax, 1\n"
               "    mov rdi, 1\n"
               "    mov rsi, rcx\n"
               "    mov rdx, 1\n"
+              "    push rcx\n" // We use rcx as a pointer too the character we
+                               // printing. But syscalls overwrite rcx:
               "    syscall\n"
+              "    pop rcx\n"
               "    cmp rcx, " +
               digitString.label.get() +
               "\n"
-              "    jge 2b\n";
+              "    jge " +
+              looptoPrintStr.get() + "\n";
 
   return asmPiece;
 }
@@ -175,8 +215,77 @@ inline std::string sys_exit(const ErrorCode &errorCode) {
          "		syscall\n";
 }
 
-inline std::string composeProgram() {
+class ExprToAssembly : public Visitor{
+  public:
+  // TODO get rid of this it is horrid;
+  Sections & sections_;
+  AsmPiece asmPiece;
 
+  ExprToAssembly(Sections &sections)
+    :sections_(sections) {}
+
+inline AsmPiece walkTree(ExprPtr expr) {
+  expr->accept(*this);
+  return asmPiece;
+}
+
+void visit(BinaryExpr &el) 
+{
+    el.left->accept(*this);
+    el.right->accept(*this);
+
+    asmPiece += "    pop rax\n";
+    asmPiece += "    pop rbx\n";
+
+    switch (el.op.type()) {
+        case Token::PLUS:
+            asmPiece += "    add rax, rbx\n";
+            asmPiece += "    push rax\n";
+            break;
+        case Token::MINUS:
+            asmPiece += "    sub rax, rbx\n";
+            asmPiece += "    push rax\n";
+            break;
+        case Token::STAR:
+            asmPiece += "    mul rbx\n";
+            asmPiece += "    push rax\n";
+            break;
+        case Token::SLASH:
+            asmPiece += "    mov rdx, 0\n"; // Otherwise will mess up the division
+            asmPiece += "    div rbx\n";
+            asmPiece += "    push rax\n";
+            break;
+        default:
+            // TODO no exceptions!
+            throw std::runtime_error("Invalid operand of binary expr -> parser what did u do ?");
+    }
+}
+
+void visit(UnaryExpr &el)
+{
+    el.right->accept(*this);
+    switch (el.op.type()) {
+        case Token::MINUS:
+            asmPiece += "    pop rax\n";
+            asmPiece += "    neg rax\n";
+            asmPiece += "    push rax\n";
+            break;
+        default:
+            throw std::runtime_error("Invalid operand of binary expr -> parser what did u do ?");
+    }
+}
+
+void visit(LiteralExpr &el)
+{
+  // TODO seems rather shaky to assume this works.
+  asmPiece += "    mov rax, " + el.literal.lexeme() + "\n";
+  asmPiece += "    push rax\n";
+}
+
+};
+
+
+inline std::string composeProgram(ExprPtr expr) {
   auto sections = Sections();
 
   auto result = std::string();
@@ -186,7 +295,13 @@ inline std::string composeProgram() {
   result += detail::function("_start");
   sections.addTextSectionEntry(Label("_start"));
 
-  result += printStringInline("I am going to print register rax'", sections);
+  result += printStringInline("Launching program", sections);
+
+  auto treeWalker = ExprToAssembly(sections);
+  result += treeWalker.walkTree(expr);
+
+  result += "    pop rax\n";
+
   result += printRaxInline(sections);
   result += printStringInline("'Done will exit with 0", sections);
   result += sys_exit(ErrorCode(0));
@@ -203,7 +318,7 @@ inline std::string composeProgram() {
 inline std::string generateAssembly(ExprPtr expr) {
   std::cout << "Generating assembly ...\n";
 
-  return detail::composeProgram();
+  return detail::composeProgram(expr);
 }
 } // namespace code_gen
 } // namespace aeeh
