@@ -234,8 +234,8 @@ void visit(BinaryExpr &el)
     el.left->accept(*this);
     el.right->accept(*this);
 
-    asmPiece += "    pop rax\n";
     asmPiece += "    pop rbx\n";
+    asmPiece += "    pop rax\n";
 
     switch (el.op.type()) {
         case Token::PLUS:
@@ -295,15 +295,12 @@ inline std::string composeProgram(ExprPtr expr) {
   result += detail::function("_start");
   sections.addTextSectionEntry(Label("_start"));
 
-  result += printStringInline("Launching program", sections);
-
   auto treeWalker = ExprToAssembly(sections);
   result += treeWalker.walkTree(expr);
 
   result += "    pop rax\n";
 
   result += printRaxInline(sections);
-  result += printStringInline("'Done will exit with 0", sections);
   result += sys_exit(ErrorCode(0));
   result += "\n";
 
@@ -316,8 +313,6 @@ inline std::string composeProgram(ExprPtr expr) {
 } // namespace detail
 
 inline std::string generateAssembly(ExprPtr expr) {
-  std::cout << "Generating assembly ...\n";
-
   return detail::composeProgram(expr);
 }
 } // namespace code_gen
