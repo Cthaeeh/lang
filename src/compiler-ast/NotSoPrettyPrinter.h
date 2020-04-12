@@ -5,22 +5,20 @@
 #ifndef VMTEST_NOTSOPRETTYPRINTER_H
 #define VMTEST_NOTSOPRETTYPRINTER_H
 
-
-#include <Visitor.h>
 #include "Expr.h"
 
-class NotSoPrettyPrinter : public Visitor{
-public:
-    std::string print(ExprPtr expr);
+namespace aeeh {
+namespace ast {
 
-    virtual void visit(BinaryExpr &el) override;
-    virtual void visit(UnaryExpr &el) override;
-    virtual void visit(LiteralExpr &el) override;
+std::string print(const Expr &expr);
 
-private:
-    std::string cache_ = "";
-};
+std::string print(const BinaryExpr &el);
 
+std::string print(const UnaryExpr &el);
 
+std::string print(const LiteralExpr &el);
+
+}
+}
 
 #endif //VMTEST_NOTSOPRETTYPRINTER_H

@@ -6,49 +6,20 @@
 #define VMTEST_LEXER_H
 
 #include <string>
-#include <memory>
 #include <vector>
-#include <map>
-#include <Token.h>  //TODO fix this so that i dont have the write relative path like that.
+#include <Token.h>  
 
 /**
  * Ultra basic lexer
  * TODO unicode support
  * TODO support literals
  */
+namespace aeeh{
+namespace frontend{
 
-typedef std::shared_ptr<std::vector<Token>> TokensPtr;
-typedef std::shared_ptr<const std::vector<Token>> TokensConstPtr;
-class Lexer {
+  std::vector<ast::Token> lex(const std::string &code);
 
-public:
-    Lexer(const std::string &source);
-
-    TokensConstPtr lex();
-
-private:
-
-    void scanToken();
-
-    bool isAtEnd();
-    char advance();
-    void addToken(Token::Type type);
-    bool match(char expected);
-    static bool isDigit(char c);
-    void number();
-    char peek();
-    void identifier();
-    static bool isAlpha(char c);
-
-    const std::string source_;
-    const TokensPtr tokens_;
-    int start = 0;
-    int current = 0;
-    int line = 0;
-
-    static const std::map<std::string, Token::Type > keywords_;
-
-};
-
+}
+}
 
 #endif //VMTEST_LEXER_H

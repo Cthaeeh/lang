@@ -6,19 +6,16 @@
 #define VMTEST_PARSER_H
 
 #include <Expr.h>
-#include "Lexer.h"
+#include <optional>
+#include <vector>
+#include "Token.h"
 
-class Parser {
-public:
+namespace aeeh{
+namespace frontend{
 
-    Parser(const TokensConstPtr tokens);
+  std::optional<ast::Expr> parse(std::vector<ast::Token> tokens);
 
-    std::shared_ptr<Expr> parse();
-
-private:
-
-    const TokensConstPtr tokens_;
-};
-
+}
+}
 
 #endif //VMTEST_PARSER_H

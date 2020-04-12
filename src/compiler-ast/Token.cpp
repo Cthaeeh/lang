@@ -4,42 +4,25 @@
 
 #include "Token.h"
 
-Token::Token (Type type,
+namespace aeeh{
+namespace ast{
+
+Token::Token (TokenType type,
               const std::string &lexeme,
               int line)
-    :type_(type),
-     lexeme_(lexeme),
-     line_(line)
-{
+    :type(type),
+     lexeme(lexeme),
+     line(line)
+{}
 
-}
-
-//Token::Token()
-//    :type_(Token::EoF),
-//     lexeme_(""),
-//     line_(1){}
-
-
-Token::Type Token::type() const
-{
-    return type_;
-}
-
-int Token::line() const
-{
-    return line_;
-}
-
-const std::string& Token::lexeme() const
-{
-    return lexeme_;
-}
-
-std::string Token::toString() {
-    switch (type_) {
-        case EoF:
-            return "[End of File]";
-        default:
-            return "[" + lexeme_ + "]";
+std::string toString(const Token &token) {
+    switch (token.type) {
+      case TokenType::EoF:
+        return "[End of File]";
+      default:
+        return "[" + token.lexeme + "]";
     }
+}
+
+}
 }

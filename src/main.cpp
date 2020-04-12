@@ -15,46 +15,42 @@
 
 namespace cg = aeeh::code_gen;
 
-int main(int argc, char** argv) 
-{
-	// TODO move command line parsing to method.
-	cxxopts::Options options("test", "A brief description");
-	
-	options.add_options()
-		("a,assembly", "Output assembly instead of using the vm",
-		 cxxopts::value<bool>()->default_value("true")
-		)
-	;
-	auto result = options.parse(argc, argv);
+int main(int argc, char **argv) {
+  // TODO move command line parsing to method.
+  cxxopts::Options options("test", "A brief description");
 
-	auto outputAssembly = result["assembly"].as<bool>();
+  options.add_options()("a,assembly", "Output assembly instead of using the vm",
+                        cxxopts::value<bool>()->default_value("true"));
+  auto result = options.parse(argc, argv);
 
-	// TODO make this functional -> why does this need an object ???
-    Lexer lexer("4 - 2");
-    auto tokens = lexer.lex();
+  auto outputAssembly = result["assembly"].as<bool>();
 
-	// TODO make this functional -> why does this need an object ???
-    Parser parser(tokens);
-    auto ast = parser.parse();
+  // TODO make this functional -> why does this need an object ???
+  Lexer lexer("4 - 2");
+  auto tokens = lexer.lex();
 
-    NotSoPrettyPrinter printer;
-    std::cout << "AST:" << std::endl << printer.print(ast) << std::endl;
+  // TODO make this functional -> why does this need an object ???
+  Parser parser(tokens);
+  auto ast = parser.parse();
 
-	if (outputAssembly) {
-		auto assembly = cg::generateAssembly(ast);
-		std::ofstream out("output.asm");
-		out << assembly;
-	} else {
-        CodeGen codeGen;
-        auto chunk = codeGen.generate(ast);
+  NotSoPrettyPrinter printer;
+  std::cout << "AST:" << std::endl << printer.print(ast) << std::endl;
 
-        dissassembleChunk(chunk,"test chunk");
+  if (outputAssembly) {
+    auto assembly = cg::generateAssembly(ast);
+    std::ofstream out("output.asm");
+    out << assembly;
+  } else {
+    CodeGen codeGen;
+    auto chunk = codeGen.generate(ast);
 
-        VirtualMachine vm;
-        vm.interpret(chunk);
-	}
+    dissassembleChunk(chunk, "test chunk");
 
-    auto  sddfds    = std::vector< std::string > {};
+    VirtualMachine vm;
+    vm.interpret(chunk);
+  }
 
-    return 0;
+  auto sddfds = std::vector<std::string>{};
+
+  return 0;
 }

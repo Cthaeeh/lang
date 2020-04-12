@@ -3,61 +3,67 @@
 //
 
 #include "Parser.h"
-#include <BinaryExpr.h>
-#include <LiteralExpr.h>
-#include <UnaryExpr.h>
+#include "Expr.h"
 #include <cppcmb.hpp>
-#include <Token.h>
 #include <iostream>
+#include <optional>
+
+
+namespace aeeh {
+namespace frontend {
 
 namespace pc = cppcmb;
 
-Parser::Parser(const TokensConstPtr tokens) : tokens_(tokens)
-{
-
+template <ast::TokenType type> 
+bool is_same_token_type(ast::Token t) {
+  return t.type == type;
 }
 
-template <Token::Type type>
-bool is_same_token_type(Token t) { return t.type() == type; }
-
-template <Token::Type type>
+template <ast::TokenType type>
 inline constexpr auto match = pc::one[pc::filter(is_same_token_type<type>)];
 
-cppcmb_decl(expr,    ExprPtr);
-cppcmb_decl(mul,     ExprPtr);
-cppcmb_decl(unary,   ExprPtr);
-cppcmb_decl(primary, ExprPtr);
+cppcmb_decl(expr, ast::Expr);
+cppcmb_decl(mul, ast::Expr);
+cppcmb_decl(unary, ast::Expr);
+cppcmb_decl(primary, ast::Expr);
 
-cppcmb_def(expr) = pc::pass
-                   | (expr & match<Token::PLUS> & mul) [BinaryExpr::make]
-                   | (expr & match<Token::MINUS> & mul) [BinaryExpr::make]
-                   | mul
-                   %= pc::as_memo_d;
+cppcmb_def(expr) = pc::pass 
+    | (expr & match<ast::TokenType::PLUS> & mul)[ast::makeBinaryExpr] 
+    | (expr & match<ast::TokenType::MINUS> & mul)[ast::makeBinaryExpr] 
+    | mul
+    %= pc::as_memo_d;
 
-cppcmb_def(mul) = pc::pass
-                   | (mul & match<Token::STAR> & unary) [BinaryExpr::make]
-                   | (mul & match<Token::SLASH> & unary) [BinaryExpr::make]
-                   | unary
-                   %= pc::as_memo_d;
+cppcmb_def(mul) = pc::pass 
+    | (mul & match<ast::TokenType::STAR> & unary)[ast::makeBinaryExpr] 
+    | (mul & match<ast::TokenType::SLASH> & unary)[ast::makeBinaryExpr] 
+    | unary
+    %= pc::as_memo_d;
 
-cppcmb_def(unary) = pc::pass
-                   | (match<Token::MINUS> & primary) [UnaryExpr::make]
-                   | primary
-                   %= pc::as_memo_d;
+cppcmb_def(unary) = pc::pass 
+    | (match<ast::TokenType::MINUS> & primary)[ast::makeUnaryExpr] 
+    | primary
+    %= pc::as_memo_d;
 
-cppcmb_def(primary) = pc::pass
-                   | (match<Token::NUMBER>) [LiteralExpr::make]
-                   | (match<Token::LEFT_PAREN> & expr & match<Token::RIGHT_PAREN>) [pc::select<1>]
-                   %= pc::as_memo_d;
+cppcmb_def(primary) = pc::pass 
+    | (match<ast::TokenType::NUMBER>)[ast::makeLiteralExpr] 
+    | (match<ast::TokenType::LEFT_PAREN> & expr & match<ast::TokenType::RIGHT_PAREN>)[pc::select<1>] 
+    %= pc::as_memo_d;
 
-ExprPtr Parser::parse(){
-    auto parser = pc::parser(expr);
+std::optional<ast::Expr> parse(const std::vector<ast::Token> &tokens) {
 
-    auto res = parser.parse(*tokens_);
-    if (res.is_success()) {
-        std::cout << "Parse success" << std::endl;
-        return res.success().value();
-    } else {
-        throw std::runtime_error("Parsing failed");
-    }
+  auto parser = pc::parser(expr);
+
+  auto res = parser.parse(tokens);
+  if (res.is_success()) {
+    return res.success().value();
+  } else {
+    return std::nullopt;
+  }
 }
+
+//std::optional<ast::Expr> parse(const std::vector<ast::Token> &tokens) {
+//  return detail::parse(tokens);
+//}
+
+} // namespace frontend
+} // namespace aeeh
