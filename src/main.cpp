@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 	auto outputAssembly = result["assembly"].as<bool>();
 
 	// TODO make this functional -> why does this need an object ???
-    Lexer lexer("1 + 1");
+    Lexer lexer("(1 + 1) * 12");
     auto tokens = lexer.lex();
 
 	// TODO make this functional -> why does this need an object ???
