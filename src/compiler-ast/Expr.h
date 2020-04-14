@@ -53,17 +53,17 @@ struct UnaryExpr{
   const ExprPtr right;
 };
 
-Expr makeBinaryExpr(const Expr& left, const Token &op, const Expr& right)
+inline Expr makeBinaryExpr(const Expr& left, const Token &op, const Expr& right)
 {
   return BinaryExpr(left, op, right);
 }
 
-Expr makeLiteralExpr(const Token &literal)
+inline Expr makeLiteralExpr(const Token &literal)
 {
   return LiteralExpr(literal);
 }
 
-Expr makeUnaryExpr(const Token &op, const Expr &right)
+inline Expr makeUnaryExpr(const Token &op, const Expr &right)
 {
   return UnaryExpr(op, right);
 }

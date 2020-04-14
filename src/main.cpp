@@ -1,11 +1,9 @@
 #include "VirtualMachine.h"
-#include <BinaryExpr.h>
 #include <Chunk.h>
 #include <CodeGen.h>
 #include <CodeGenAssembly.h>
 #include <Debug.h>
 #include <Lexer.h>
-#include <LiteralExpr.h>
 #include <NotSoPrettyPrinter.h>
 #include <Parser.h>
 #include <fstream>
@@ -25,32 +23,29 @@ int main(int argc, char **argv) {
 
   auto outputAssembly = result["assembly"].as<bool>();
 
-  // TODO make this functional -> why does this need an object ???
-  Lexer lexer("4 - 2");
-  auto tokens = lexer.lex();
+  // TODO get ur output from file /cmd line.
+  auto tokens = aeeh::frontend::lex("2 + 2");
 
-  // TODO make this functional -> why does this need an object ???
-  Parser parser(tokens);
-  auto ast = parser.parse();
+  auto ast = aeeh::frontend::parse(tokens);
 
-  NotSoPrettyPrinter printer;
-  std::cout << "AST:" << std::endl << printer.print(ast) << std::endl;
+  if (!ast.has_value()) {
+    std::cout << "No AST generated" << std::endl;
+    return 1;
+  }
+
+  std::cout << "AST:" << std::endl << aeeh::ast::print(ast.value()) << std::endl;
 
   if (outputAssembly) {
-    auto assembly = cg::generateAssembly(ast);
+    auto assembly = cg::generateAssembly(ast.value());
     std::ofstream out("output.asm");
     out << assembly;
   } else {
-    CodeGen codeGen;
-    auto chunk = codeGen.generate(ast);
+    auto chunk = aeeh::backend::generate(ast.value());
 
     dissassembleChunk(chunk, "test chunk");
 
     VirtualMachine vm;
     vm.interpret(chunk);
   }
-
-  auto sddfds = std::vector<std::string>{};
-
   return 0;
 }

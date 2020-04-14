@@ -6,22 +6,15 @@
 #define VMTEST_CODEGEN_H
 
 
-#include <Visitor.h>
 #include <Expr.h>
 #include "../compiler-bytecode/Chunk.h"
 
-class CodeGen : public Visitor{
+namespace aeeh {
+namespace backend {
 
-public:
-    Chunk generate(ExprPtr expr);
+Chunk generate(const ast::Expr &expr);
 
-    virtual void visit(BinaryExpr &el) override;
-    virtual void visit(UnaryExpr &el) override;
-    virtual void visit(LiteralExpr &el) override;
-
-private:
-    Chunk chunk;
-};
-
+}
+}
 
 #endif //VMTEST_CODEGEN_H

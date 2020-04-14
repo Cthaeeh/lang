@@ -10,16 +10,20 @@
 #include <stdexcept>
 #include <string>
 
-namespace cg = aeeh::code_gen;
+namespace aeeh {
+
+namespace cg = code_gen;
 
 std::string compileAndExecute(const std::string &code) {
-  Lexer lexer(code);
-  auto tokens = lexer.lex();
+  auto tokens = frontend::lex(code);
 
-  Parser parser(tokens);
-  auto ast = parser.parse();
+  auto ast = frontend::parse(tokens);
 
-  auto assembly = cg::generateAssembly(ast);
+  if (!ast.has_value()) {
+    return "parse fail";
+  }
+
+  auto assembly = cg::generateAssembly(ast.value());
   std::ofstream out("temp_test.asm");
   out << assembly;
   out.flush();
@@ -62,4 +66,6 @@ TEST(FullAsm, division) {
   EXPECT_EQ(compileAndExecute("1 / 1"), std::string("1"));
   EXPECT_EQ(compileAndExecute("9 / 3"), std::string("3"));
   EXPECT_EQ(compileAndExecute("100 / 4"), std::string("25"));
+}
+
 }

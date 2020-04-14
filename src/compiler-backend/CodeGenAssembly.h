@@ -1,20 +1,20 @@
 #include "underlying_functionalities.hpp"
-#include <BinaryExpr.h>
-#include <LiteralExpr.h>
-#include <UnaryExpr.h>
+#include <Expr.h>
 #include <algorithm>
 #include <iostream>
 #include <named_type.hpp>
 #include <string>
 #include <utility>
 #include <vector>
-#include <BinaryExpr.h>
-#include <UnaryExpr.h>
-#include <LiteralExpr.h>
 
 namespace aeeh {
 namespace code_gen {
 namespace detail {
+
+// TODO move this to some utility header.
+template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
+template <class... Ts>
+overloaded(Ts...)->overloaded<Ts...>; // not needed as of C++20
 
 // TODO strong types are broken == and method calling does not work and such.
 
@@ -215,77 +215,74 @@ inline std::string sys_exit(const ErrorCode &errorCode) {
          "		syscall\n";
 }
 
-class ExprToAssembly : public Visitor{
-  public:
-  // TODO get rid of this it is horrid;
-  Sections & sections_;
-  AsmPiece asmPiece;
+inline AsmPiece toAssembly(const ast::Expr &expr) {
+  auto result = AsmPiece();
+  std::visit(
+      overloaded{
+          [&result](const auto &e) { result = toAssembly(e); },
+      },
+      expr);
+  return result;
+}
 
-  ExprToAssembly(Sections &sections)
-    :sections_(sections) {}
+inline AsmPiece toAssembly(const ast::BinaryExpr &el) {
+  auto asmPiece = AsmPiece();
+  asmPiece += toAssembly(*el.left);
+  asmPiece += toAssembly(*el.rigth);
 
-inline AsmPiece walkTree(ExprPtr expr) {
-  expr->accept(*this);
+  asmPiece += "    pop rbx\n";
+  asmPiece += "    pop rax\n";
+
+  switch (el.op.type) {
+  case ast::TokenType::PLUS:
+    asmPiece += "    add rax, rbx\n";
+    asmPiece += "    push rax\n";
+    break;
+  case ast::TokenType::MINUS:
+    asmPiece += "    sub rax, rbx\n";
+    asmPiece += "    push rax\n";
+    break;
+  case ast::TokenType::STAR:
+    asmPiece += "    mul rbx\n";
+    asmPiece += "    push rax\n";
+    break;
+  case ast::TokenType::SLASH:
+    asmPiece += "    mov rdx, 0\n"; // Otherwise will mess up the division
+    asmPiece += "    div rbx\n";
+    asmPiece += "    push rax\n";
+    break;
+  default:
+    // TODO no exceptions!
+    throw std::runtime_error(
+        "Invalid operand of binary expr -> parser what did u do ?");
+  }
   return asmPiece;
 }
 
-void visit(BinaryExpr &el) 
-{
-    el.left->accept(*this);
-    el.right->accept(*this);
+inline AsmPiece toAssembly(const ast::UnaryExpr &el) {
 
-    asmPiece += "    pop rbx\n";
+  auto asmPiece = AsmPiece();
+  asmPiece += toAssembly(*el.right);
+  switch (el.op.type) {
+    case ast::TokenType::MINUS:
     asmPiece += "    pop rax\n";
-
-    switch (el.op.type()) {
-        case Token::PLUS:
-            asmPiece += "    add rax, rbx\n";
-            asmPiece += "    push rax\n";
-            break;
-        case Token::MINUS:
-            asmPiece += "    sub rax, rbx\n";
-            asmPiece += "    push rax\n";
-            break;
-        case Token::STAR:
-            asmPiece += "    mul rbx\n";
-            asmPiece += "    push rax\n";
-            break;
-        case Token::SLASH:
-            asmPiece += "    mov rdx, 0\n"; // Otherwise will mess up the division
-            asmPiece += "    div rbx\n";
-            asmPiece += "    push rax\n";
-            break;
-        default:
-            // TODO no exceptions!
-            throw std::runtime_error("Invalid operand of binary expr -> parser what did u do ?");
-    }
+    asmPiece += "    neg rax\n";
+    asmPiece += "    push rax\n";
+    break;
+  default:
+    throw std::runtime_error(
+        "Invalid operand of binary expr -> parser what did u do ?");
+  }
+  return asmPiece;
 }
 
-void visit(UnaryExpr &el)
-{
-    el.right->accept(*this);
-    switch (el.op.type()) {
-        case Token::MINUS:
-            asmPiece += "    pop rax\n";
-            asmPiece += "    neg rax\n";
-            asmPiece += "    push rax\n";
-            break;
-        default:
-            throw std::runtime_error("Invalid operand of binary expr -> parser what did u do ?");
-    }
-}
-
-void visit(LiteralExpr &el)
-{
+AsmPiece visit(const ast::LiteralExpr &el) {
   // TODO seems rather shaky to assume this works.
-  asmPiece += "    mov rax, " + el.literal.lexeme() + "\n";
-  asmPiece += "    push rax\n";
+  return "    mov rax, " + el.literal.lexeme + "\n"
+         "    push rax\n";
 }
 
-};
-
-
-inline std::string composeProgram(ExprPtr expr) {
+inline std::string composeProgram(ast::Expr expr) {
   auto sections = Sections();
 
   auto result = std::string();
@@ -295,8 +292,8 @@ inline std::string composeProgram(ExprPtr expr) {
   result += detail::function("_start");
   sections.addTextSectionEntry(Label("_start"));
 
-  auto treeWalker = ExprToAssembly(sections);
-  result += treeWalker.walkTree(expr);
+  // TODO rename
+  result += toAssembly(expr);
 
   result += "    pop rax\n";
 
@@ -310,10 +307,10 @@ inline std::string composeProgram(ExprPtr expr) {
   return result;
 }
 
-} // namespace detail
+} // namespace code_gen
 
-inline std::string generateAssembly(ExprPtr expr) {
+inline std::string generateAssembly(ast::Expr expr) {
   return detail::composeProgram(expr);
 }
-} // namespace code_gen
+} // namespace aeeh
 } // namespace aeeh
