@@ -4,10 +4,12 @@
 
 #include "Parser.h"
 #include "Expr.h"
+#include "NotSoPrettyPrinter.h"
 #include "Token.h"
 #include <cppcmb.hpp>
 #include <functional>
 #include <iostream>
+#include <iterator>
 #include <optional>
 #include <vector>
 
@@ -109,7 +111,8 @@ getPrecedence(std::vector<std::tuple<ast::TokenType, T, Precedence>> vec,
 }
 
 auto parse(const Range &tokens, Precedence precedence) -> ParseProgress {
-
+  
+  std::cout << "NUMBER OF TOKENS LEFT" << std::distance(tokens.begin, tokens.end) << std::endl;
   if (tokens.empty())
     return noProgress(tokens);
 
@@ -129,21 +132,42 @@ auto parse(const Range &tokens, Precedence precedence) -> ParseProgress {
           {ast::TokenType::SLASH, parseInfix, PRODUCT}};
 
   auto token = *tokens.begin;
+  std::cout << "MAIN PARSE FUNCTION TOKEN IS:" << ast::toString(token) << std::endl;
 
   auto prefix = findParselet(prefixParslets, token.type);
 
+  std::cout << "MAIN PARSE FUNCTION FOUND PREFIX PARSLET:" << (prefix.has_value() ? "yes":"no") << std::endl;
+
   auto [left, pos] = prefix ? prefix.value()(tokens) : noProgress(tokens);
 
+  std::cout << "By parsing the prefix we made progress:" << std::distance(tokens.begin,
+                                                                          pos) << std::endl;
+
   // Stop if no progress was made
+  if (pos == tokens.end) {
+    std::cout << "Hit the end, will return " << std::endl;
+    return {left,pos};
+  }
+  std::cout << "MAIN PARSE FUNCTION TOKEN FOR INFIX PARSING IS:" << ast::toString(*pos) << std::endl;
 
   while (precedence < getPrecedence(infixParslets, (*pos).type)) {
-    auto infix = findParselet(infixParslets, token.type);
+    auto infix = findParselet(infixParslets, (*pos).type);
+
+    std::cout << "MAIN PARSE FUNCTION FOUND INFIX PARSLET:" << (infix.has_value() ? "yes":"no") << std::endl;
 
     Range r = {pos, tokens.end};
 
     auto l = left;
     // TODO error what if no infix available ?
     auto [left, pos] = infix.value()(l.value(), r);
+
+    if (pos == tokens.end) {
+      std::cout << "Hit the end, will return 2" << std::endl;
+      return {left,pos};
+    }
+
+    std::cout << "By parsing the infix we made progress:" << std::distance(tokens.begin,
+                                                                           pos) << std::endl;
   }
 
   return {left, pos};
