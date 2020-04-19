@@ -215,6 +215,17 @@ inline std::string sys_exit(const ErrorCode &errorCode) {
          "		syscall\n";
 }
 
+// TODO this is rather shady.
+// Because what if one adds a new kind of expression.
+// Then AsmPiece toAssembly(const ast::Expr &expr)
+// will go into infinite recusion.
+// We have the same problem in the Printer.
+// Maybe its just not a good idea to use the templated lambda for
+// visitation.
+inline AsmPiece toAssembly(const ast::BinaryExpr &el);
+inline AsmPiece toAssembly(const ast::UnaryExpr &el);
+inline AsmPiece toAssembly(const ast::LiteralExpr &el);
+
 inline AsmPiece toAssembly(const ast::Expr &expr) {
   auto result = AsmPiece();
   std::visit(
@@ -276,13 +287,13 @@ inline AsmPiece toAssembly(const ast::UnaryExpr &el) {
   return asmPiece;
 }
 
-AsmPiece visit(const ast::LiteralExpr &el) {
+inline AsmPiece toAssembly(const ast::LiteralExpr &el) {
   // TODO seems rather shaky to assume this works.
   return "    mov rax, " + el.literal.lexeme + "\n"
          "    push rax\n";
 }
 
-inline std::string composeProgram(ast::Expr expr) {
+inline std::string composeProgram(const ast::Expr &expr) {
   auto sections = Sections();
 
   auto result = std::string();
@@ -309,7 +320,7 @@ inline std::string composeProgram(ast::Expr expr) {
 
 } // namespace code_gen
 
-inline std::string generateAssembly(ast::Expr expr) {
+inline std::string generateAssembly(const ast::Expr &expr) {
   return detail::composeProgram(expr);
 }
 } // namespace aeeh
