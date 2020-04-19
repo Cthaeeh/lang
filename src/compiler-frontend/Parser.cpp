@@ -11,6 +11,7 @@
 #include <iostream>
 #include <iterator>
 #include <optional>
+#include <utility>
 #include <vector>
 
 namespace aeeh {
@@ -56,6 +57,21 @@ auto parseLiteral(const Range &tokens) -> ParseProgress {
   }
 }
 
+auto parseGroup(const Range &tokens) -> ParseProgress {
+  if (tokens.empty()) {
+    return noProgress(tokens);
+  } else {
+    auto [expr, pos] = parse({tokens.begin + 1, tokens.end}, 0);
+    if(pos == tokens.end || (*pos).type != ast::TokenType::RIGHT_PAREN) {
+      // TODO do useful error reporting.
+      std::cout << "Missing closing ')'" << std::endl;
+      return noProgress(tokens);
+    } else {
+      return {expr, pos + 1};
+    }
+  }
+}
+
 auto parsePrefix(const Range &tokens) -> ParseProgress {
   if (tokens.empty()) {
     return noProgress(tokens);
@@ -76,12 +92,30 @@ auto parseInfix(const ast::Expr &lhs, const Range &tokens) -> ParseProgress {
   }
 
   auto [rhs, pos] =
-      parse({tokens.begin + 1, tokens.end}, 23); // WHAT PRECEDENCE ???
+      parse({tokens.begin + 1, tokens.end}, 0); // WHAT PRECEDENCE ???
   if (rhs.has_value()) {
     return {ast::makeBinaryExpr(lhs, *tokens.begin, rhs.value()), pos};
   } else {
     return noProgress(tokens);
   }
+}
+
+auto parseBinaryExpr(Precedence precedence) -> InfixParselet {
+
+  return [precedence = precedence](const ast::Expr &lhs, const Range &tokens) ->ParseProgress {
+
+    if (tokens.empty()) {
+      return noProgress(tokens);
+    }
+
+    auto [rhs, pos] =
+        parse({tokens.begin + 1, tokens.end}, precedence); // WHAT PRECEDENCE ???
+    if (rhs.has_value()) {
+      return {ast::makeBinaryExpr(lhs, *tokens.begin, rhs.value()), pos};
+    } else {
+      return noProgress(tokens);
+    }
+  };
 }
 
 // TODO add postfix expressions ?
@@ -119,6 +153,7 @@ auto parse(const Range &tokens, Precedence precedence) -> ParseProgress {
   // TODO use some flat map or something
   static auto prefixParslets =
       std::vector<std::tuple<ast::TokenType, PrefixParselet, Precedence>>{
+          {ast::TokenType::LEFT_PAREN, parseGroup, PREFIX},
           {ast::TokenType::NUMBER, parseLiteral, PREFIX},
           {ast::TokenType::MINUS, parsePrefix, PREFIX},
           {ast::TokenType::PLUS, parsePrefix, PREFIX},
@@ -126,10 +161,10 @@ auto parse(const Range &tokens, Precedence precedence) -> ParseProgress {
 
   static auto infixParslets =
       std::vector<std::tuple<ast::TokenType, InfixParselet, Precedence>>{
-          {ast::TokenType::MINUS, parseInfix, SUM},
-          {ast::TokenType::PLUS, parseInfix, SUM},
-          {ast::TokenType::STAR, parseInfix, PRODUCT},
-          {ast::TokenType::SLASH, parseInfix, PRODUCT}};
+          {ast::TokenType::MINUS, parseBinaryExpr(SUM), SUM},
+          {ast::TokenType::PLUS, parseBinaryExpr(SUM), SUM},
+          {ast::TokenType::STAR, parseBinaryExpr(PRODUCT), PRODUCT},
+          {ast::TokenType::SLASH, parseBinaryExpr(PRODUCT), PRODUCT}};
 
   auto token = *tokens.begin;
   std::cout << "MAIN PARSE FUNCTION TOKEN IS:" << ast::toString(token) << std::endl;
@@ -159,7 +194,10 @@ auto parse(const Range &tokens, Precedence precedence) -> ParseProgress {
 
     auto l = left;
     // TODO error what if no infix available ?
-    auto [left, pos] = infix.value()(l.value(), r);
+    auto [left_2, pos_2] = infix.value()(l.value(), r);
+
+    left = std::move(left_2);
+    pos = pos_2;
 
     if (pos == tokens.end) {
       std::cout << "Hit the end, will return 2" << std::endl;

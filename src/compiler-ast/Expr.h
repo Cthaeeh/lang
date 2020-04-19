@@ -20,7 +20,6 @@ using Expr = std::variant<BinaryExpr, UnaryExpr, LiteralExpr>;
 using ExprPtr = std::shared_ptr<Expr>;
 
 struct BinaryExpr{
-
   BinaryExpr(const Expr &left,
              const Token &op,
              const Expr &right)
@@ -29,9 +28,9 @@ struct BinaryExpr{
      rigth(std::make_shared<Expr>(right))
   {}
      
-  const ExprPtr left;
-  const Token op;       // TODO think about if this could be further typified.
-  const ExprPtr rigth;
+  ExprPtr left;
+  Token op;       // TODO think about if this could be further typified.
+  ExprPtr rigth;
 };
 
 
@@ -39,18 +38,17 @@ struct LiteralExpr{
   LiteralExpr(const Token &literal)
      :literal(literal)
   {}
-  const Token literal; 
+  Token literal; 
 };
 
 struct UnaryExpr{
-
   UnaryExpr(const Token &op,
             const Expr &right)
      :op(op),
       right(std::make_shared<Expr>(right))
   {}
-  const Token op; 
-  const ExprPtr right;
+  Token op; 
+  ExprPtr right;
 };
 
 inline Expr makeBinaryExpr(const Expr& left, const Token &op, const Expr& right)

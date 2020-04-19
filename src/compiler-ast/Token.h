@@ -57,9 +57,9 @@ Token(TokenType type,
       const std::string &lexeme,
       int line);
 
-const TokenType type;
-const std::string lexeme;
-const int line;  // TODO make this a Location
+TokenType type;
+std::string lexeme;
+int line;  // TODO make this a Location
 
 };
 

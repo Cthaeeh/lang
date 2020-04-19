@@ -20,16 +20,16 @@ std::string print(const Expr &expr) {
 }
 
 std::string print(const BinaryExpr &el) {
-  return "[left: " + print(*(el.left)) + " op: " + toString(el.op) +
-         " right: " + print(*(el.rigth)) + " ]";
+  return "(" + print(*(el.left)) + " " + el.op.lexeme +
+         " " + print(*(el.rigth)) + ")";
 }
 
 std::string print(const UnaryExpr &el) {
-  return "[right: " + print(*(el.right)) + " op: " + toString(el.op) + " ]";
+  return  el.op.lexeme + print(*(el.right));
 }
 
 std::string print(const LiteralExpr &el) {
-  return "[literal: " + toString(el.literal) + "]";
+  return el.literal.lexeme;
 }
 
 } // namespace ast
