@@ -20,8 +20,10 @@ namespace detail{
 // anything) and a thing pointing to the end of the token.
 struct ScanProgress {
   std::optional<ast::Token> token;
-  std::string_view::const_iterator endOfToken;
+  long charsEaten;
 };
+
+static auto NoProgress = ScanProgress{std::nullopt, 0};
 
 // Now we can say what a ScanFunction is. StringView -> ScanProgress
 using ScanFunction = std::function<ScanProgress(std::string_view)>;

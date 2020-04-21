@@ -16,13 +16,11 @@ namespace aeeh {
 namespace frontend {
 namespace detail {
 
-auto scanDepending(CharPredicate predicate, ScanFunction ifTrue, ScanFunction ifFalse)
-    -> ScanFunction {
+auto scanDepending(CharPredicate predicate, ScanFunction ifTrue,
+                   ScanFunction ifFalse) -> ScanFunction {
 
   return [predicate, ifTrue, ifFalse](std::string_view code) {
-    return (predicate(peek(code)))
-          ? ifTrue(code)
-          : ifFalse(code);
+    return (predicate(peek(code))) ? ifTrue(code) : ifFalse(code);
   };
 }
 
@@ -91,20 +89,21 @@ auto peek(std::string_view code) -> std::optional<char> {
 /// Advance as long as digits are hit.
 auto scanNumber(std::string_view code) -> ScanProgress {
   if (code.empty()) {
-    return {std::nullopt, code.begin()};
+    return NoProgress;
   }
 
   auto it = std::find_if(code.begin(), code.end(), std::not_fn(isDigit));
 
   auto text = std::string(code.begin(), it);
   // TODO acually use the value ?
-  return {ast::Token(ast::TokenType::NUMBER, text, 0), it};
+  return {ast::Token(ast::TokenType::NUMBER, text, 0),
+          std::distance(code.begin(), it)};
 }
 
 /// Advance as long as Letters are hit
 auto scanIdentifier(std::string_view code) -> ScanProgress {
   if (code.empty()) {
-    return {std::nullopt, code.begin()};
+    return NoProgress;
   }
 
   auto it = std::find_if(code.begin(), code.end(), std::not_fn(isAlpha));
@@ -112,16 +111,18 @@ auto scanIdentifier(std::string_view code) -> ScanProgress {
   auto text = std::string(code.begin(), it);
 
   if (keywords_.find(text) != keywords_.end()) {
-    return {ast::Token(keywords_.at(text), text, 0), it};
+    return {ast::Token(keywords_.at(text), text, 0),
+            std::distance(code.begin(), it)};
   } else {
-    return {ast::Token(ast::TokenType::IDENTIFIER, text, 0), it};
+    return {ast::Token(ast::TokenType::IDENTIFIER, text, 0),
+            std::distance(code.begin(), it)};
   }
 }
 
 auto scanSingleCharacterToken(ast::TokenType type) -> ScanFunction {
   return [type](std::string_view code) -> ScanProgress {
     auto text = std::string(code.begin(), code.begin() + 1);
-    return {ast::Token(type, text, 0), code.begin() + 1};
+    return {ast::Token(type, text, 0), 1};
     // TODO get line info back
   };
 }
@@ -129,19 +130,18 @@ auto scanSingleCharacterToken(ast::TokenType type) -> ScanFunction {
 auto scanDoubleCharacterToken(ast::TokenType type) -> ScanFunction {
   return [type](std::string_view code) -> ScanProgress {
     auto text = std::string(code.begin(), code.begin() + 2);
-    return {ast::Token(type, text, 0),
-            code.begin() + 2}; // TODO get line info back
+    return {ast::Token(type, text, 0), 2}; // TODO get line info back
   };
 }
 
 auto inline skipChar(std::string_view code) -> ScanProgress {
-  return {std::nullopt, code.begin() + 1};
+  return {std::nullopt, 1};
 }
 
 auto scanToken(std::string_view code) -> ScanProgress {
 
   if (code.empty()) {
-    return {std::nullopt, code.begin()};
+    return {std::nullopt, 1};
   }
 
   auto c = *code.begin();
@@ -154,7 +154,7 @@ auto scanToken(std::string_view code) -> ScanProgress {
   std::cout << "No progress made. -> PROBLEM" << std::endl;
   // TODO somehow propagate here that no progress was made, because no character
   // matched.
-  return {std::nullopt, code.begin()};
+  return NoProgress;
 }
 
 std::vector<ast::Token> lex(std::string_view code) {
@@ -164,19 +164,16 @@ std::vector<ast::Token> lex(std::string_view code) {
 
   auto tokens = std::vector<ast::Token>();
 
-  auto currentPos = code.begin();
-  while (currentPos != code.end()) {
+  auto currentPos = 0;
+  while (currentPos < code.size()) {
 
-    // 'Hack' to transform pair of iterators too string_view.
-    // Not in the standard for some reason you can look up online.
-    auto scanProgress = scanToken(
-        std::string_view(&*currentPos, std::distance(currentPos, code.end())));
+    auto scanProgress = scanToken(code.substr(currentPos, code.size()));
 
     if (scanProgress.token.has_value()) {
       tokens.push_back(scanProgress.token.value());
     }
 
-    currentPos = scanProgress.endOfToken;
+    currentPos = currentPos + scanProgress.charsEaten;
   }
   return tokens;
 }
