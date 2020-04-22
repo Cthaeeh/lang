@@ -47,8 +47,7 @@ enum class TokenType {
   FOR,
   RETURN,
   WHILE,
-
-  EoF
+  FUNCTION_DEF,
 };
 
 struct Token {

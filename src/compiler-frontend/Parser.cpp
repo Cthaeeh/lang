@@ -4,18 +4,14 @@
 
 #include "Parser.h"
 #include "Expr.h"
-#include "NotSoPrettyPrinter.h"
 #include "Token.h"
-#include <cppcmb.hpp>
 #include <functional>
 #include <iostream>
-#include <iterator>
 #include <optional>
 #include <utility>
 #include <vector>
 
 namespace aeeh {
-
 namespace frontend {
 namespace detail {
 
@@ -26,12 +22,14 @@ struct ParseProgress {
   long tokensEaten;
 };
 
+static auto NoProgress = ParseProgress{std::nullopt, 0};
+
 using Precedence = size_t;
 
 // TODO do this differently.
-const auto SUM = size_t{3};
-const auto PRODUCT = size_t{4};
-const auto PREFIX = size_t{6};
+const auto SUM = Precedence{3};
+const auto PRODUCT = Precedence{4};
+const auto PREFIX = Precedence{6};
 
 using PrefixParselet = std::function<ParseProgress(TokenView)>;
 
@@ -39,8 +37,25 @@ using InfixParselet =
     std::function<ParseProgress(const ast::Expr &, TokenView)>;
 
 auto parse(TokenView, Precedence precedence = 0) -> ParseProgress;
+auto parseGroup(TokenView tokens) -> ParseProgress;
+auto parseLiteral(TokenView tokens) -> ParseProgress;
+auto parsePrefix(TokenView tokens) -> ParseProgress;
+auto parseBinaryExpr(Precedence precedence) -> InfixParselet;
 
-static auto NoProgress = ParseProgress{std::nullopt, 0};
+// clang-format off
+static auto prefixParslets = std::vector<std::tuple<ast::TokenType, PrefixParselet, Precedence>>{
+  {ast::TokenType::LEFT_PAREN, parseGroup,               PREFIX},
+  {ast::TokenType::NUMBER,     parseLiteral,             PREFIX},
+  {ast::TokenType::MINUS,      parsePrefix,              PREFIX},
+  {ast::TokenType::PLUS,       parsePrefix,              PREFIX},
+  {ast::TokenType::BANG,       parsePrefix,              PREFIX}};
+
+static auto infixParslets = std::vector<std::tuple<ast::TokenType, InfixParselet, Precedence>>{
+  {ast::TokenType::MINUS,      parseBinaryExpr(SUM),     SUM},
+  {ast::TokenType::PLUS,       parseBinaryExpr(SUM),     SUM},
+  {ast::TokenType::STAR,       parseBinaryExpr(PRODUCT), PRODUCT},
+  {ast::TokenType::SLASH,      parseBinaryExpr(PRODUCT), PRODUCT}};
+// clang-format on
 
 auto parseLiteral(TokenView tokens) -> ParseProgress {
   if (tokens.empty()) {
@@ -53,20 +68,18 @@ auto parseLiteral(TokenView tokens) -> ParseProgress {
 auto parseGroup(TokenView tokens) -> ParseProgress {
   if (tokens.empty()) {
     return NoProgress;
-  } 
-    
+  }
+
   auto [expr, exprLength] = parse(tokens.substr(1));
 
   if (exprLength + 1 >= tokens.size() ||
       tokens.at(exprLength + 1).type != ast::TokenType::RIGHT_PAREN) {
     std::cout << "Expected ')' at end of grouping" << std::endl;
-    std::cout << "Was " << tokens.at(exprLength + 1).lexeme << std::endl;
     // TODO do useful error reporting.
     return NoProgress;
   } else {
-    return {expr,1 + exprLength + 1};
+    return {expr, exprLength + 2};
   }
-  
 }
 
 auto parsePrefix(TokenView tokens) -> ParseProgress {
@@ -84,17 +97,16 @@ auto parsePrefix(TokenView tokens) -> ParseProgress {
 }
 
 auto parseBinaryExpr(Precedence precedence) -> InfixParselet {
-
   return [precedence = precedence](const ast::Expr &lhs,
                                    TokenView tokens) -> ParseProgress {
     if (tokens.empty()) {
       return NoProgress;
     }
 
-    auto [rhs, exprLength] =
-        parse(tokens.substr(1), precedence);
+    auto [rhs, exprLength] = parse(tokens.substr(1), precedence);
     if (rhs.has_value()) {
-      return {ast::makeBinaryExpr(lhs, tokens.at(0), rhs.value()), exprLength + 1};
+      return {ast::makeBinaryExpr(lhs, tokens.at(0), rhs.value()),
+              exprLength + 1};
     } else {
       return NoProgress;
     }
@@ -102,7 +114,6 @@ auto parseBinaryExpr(Precedence precedence) -> InfixParselet {
 }
 
 // TODO add postfix expressions ?
-
 template <typename T>
 std::optional<T>
 findParselet(std::vector<std::tuple<ast::TokenType, T, Precedence>> vec,
@@ -127,60 +138,41 @@ getPrecedence(std::vector<std::tuple<ast::TokenType, T, Precedence>> vec,
   return 0;
 }
 
+// TODO check if this can be simplified.
 auto parse(TokenView tokens, Precedence precedence) -> ParseProgress {
-
-  std::cout << "NUMBER OF TOKENS LEFT" << tokens.size() << std::endl;
-  if (tokens.empty())
-    return NoProgress;
-
-  // TODO use some flat map or something
-  static auto prefixParslets =
-      std::vector<std::tuple<ast::TokenType, PrefixParselet, Precedence>>{
-          {ast::TokenType::LEFT_PAREN, parseGroup, PREFIX},
-          {ast::TokenType::NUMBER, parseLiteral, PREFIX},
-          {ast::TokenType::MINUS, parsePrefix, PREFIX},
-          {ast::TokenType::PLUS, parsePrefix, PREFIX},
-          {ast::TokenType::BANG, parsePrefix, PREFIX}};
-
-  static auto infixParslets =
-      std::vector<std::tuple<ast::TokenType, InfixParselet, Precedence>>{
-          {ast::TokenType::MINUS, parseBinaryExpr(SUM), SUM},
-          {ast::TokenType::PLUS, parseBinaryExpr(SUM), SUM},
-          {ast::TokenType::STAR, parseBinaryExpr(PRODUCT), PRODUCT},
-          {ast::TokenType::SLASH, parseBinaryExpr(PRODUCT), PRODUCT}};
+  if (tokens.empty()) return NoProgress;
 
   auto token = tokens.at(0);
 
-  auto prefix = findParselet(prefixParslets, token.type);
+  auto prefixParselet = findParselet(prefixParslets, token.type);
 
-  auto [left, progress] = prefix ? prefix.value()(tokens) : NoProgress;
-
-  // We are at the end.
-  if (progress >= tokens.size()) {
-    return {left, progress};
+  if (!prefixParselet.has_value()) {
+      std::cout << "Found no prefix parselet for token '" + token.lexeme + "'";
   }
 
-  while (precedence < getPrecedence(infixParslets, tokens.at(progress).type)) {
-    auto infix = findParselet(infixParslets, tokens.at(progress).type);
+  auto [lhs, progress] = prefixParselet.value()(tokens); 
 
-    // TODO error what if no infix available ?
-    auto [left_2, pos_2] = infix.value()(left.value(), tokens.substr(progress));
+  while (progress < tokens.size() && 
+         precedence < getPrecedence(infixParslets, tokens.at(progress).type)) {
+    if (auto infixParslet = findParselet(infixParslets, tokens.at(progress).type)) {
 
-    left = std::move(left_2);
-    progress += pos_2;
+      auto [subLhs, subProgress] = infixParslet.value()(lhs.value(), tokens.substr(progress));
 
-    if (progress >= tokens.size()) {
-      return {left, progress};
+      lhs = std::move(subLhs);
+      progress += subProgress;
+
+    } else {
+      // TODO real error reporting.
+      std::cout << "Found no infix parselet for token '" + tokens.at(progress).lexeme + "'";
+      break;
     }
   }
-
-  return {left, progress};
+  return {lhs, progress};
 }
 
 } // namespace detail
 
 std::optional<ast::Expr> parse(const std::vector<ast::Token> &tokens) {
-
   return detail::parse(detail::TokenView(&(*tokens.begin()), tokens.size()), 0)
       .expr;
 }

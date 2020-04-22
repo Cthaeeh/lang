@@ -64,7 +64,9 @@ static const std::unordered_map<std::string, ast::TokenType> keywords_ = {
   {"true",    ast::TokenType::TRUE},
   {"for",     ast::TokenType::FOR},     
   {"return",  ast::TokenType::RETURN},
-  {"while",   ast::TokenType::WHILE}};
+  {"while",   ast::TokenType::WHILE},
+  {"fn",      ast::TokenType::FUNCTION_DEF},
+};
 
 // clang-format on
 

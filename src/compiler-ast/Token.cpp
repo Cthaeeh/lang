@@ -17,8 +17,6 @@ Token::Token (TokenType type,
 
 std::string toString(const Token &token) {
     switch (token.type) {
-      case TokenType::EoF:
-        return "[End of File]";
       default:
         return "[" + token.lexeme + "]";
     }

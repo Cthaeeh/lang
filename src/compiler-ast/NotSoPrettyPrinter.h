@@ -6,9 +6,18 @@
 #define VMTEST_NOTSOPRETTYPRINTER_H
 
 #include "Expr.h"
+#include "Stmt.h"
 
 namespace aeeh {
 namespace ast {
+
+std::string print(const Stmt &stmt);
+
+std::string print(const FuncStmt &stmt);
+
+std::string print(const BlockStmt &stmt);
+
+std::string print(const ExprStmt &stmt);
 
 std::string print(const Expr &expr);
 
